@@ -8,5 +8,13 @@ Have a method of updating the calculated win probability added, considering upda
 
 Steps:
 1. Train a model to predict win probability
+    - 
+
+
+
 2. Calculate the win probability before the objective is taken and subtract the end-game state from the win probability. Average across all games.
 3. Create a user interface that allows a user to filter through different game states, calculating the win probability added for each objective on request. 
+
+
+Problem:
+    What are the features we need to collect given that we are trying to predict probabilty at an arbitrary time t.
