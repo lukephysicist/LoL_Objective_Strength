@@ -1,0 +1,12 @@
+Use sample of ranked league of legends matches to calculate the win probability added for every major objective
+
+Be able to filter through gamestates, calculating the win probability added for different senarios (For example: allied team is leading by x amount of gold, enemy team has 2 dragons, etc.)
+^^^ Confidence testing to see if the win probability added deviates significantly from 0
+
+Have a method of updating the calculated win probability added, considering updates can change the game (Bayes' rule?)
+
+
+Steps:
+1. Train a model to predict win probability
+2. Calculate the win probability before the objective is taken and subtract the end-game state from the win probability. Average across all games.
+3. Create a user interface that allows a user to filter through different game states, calculating the win probability added for each objective on request. 
