@@ -12,19 +12,27 @@ Steps:
     - Identify when objective is taken ---> measure gamestate at proceeding minute ---> take into account events that happen between preceeding measurement and objective capture
     
     Feature list: (* = static, # = nonfeature)
+        - GameID#
+        - TeamID#
         - CCScore*
+        - EnemyCCScore*
         - IsSquishy*
         - VsSquishy*
-        - IsHeavyAD*
-        - VsHeavyAD*
-        - IsHeavyAP*
-        - VsHeavyAP*
+        - ADZScore
+        - EnemyADZScore
+        - APZScore
+        - EnemyAPZScore
+            - For Heavy AD/AP features, I will create a distribution of magic/physical damage as proportion
+            of total damage done, which I assume will be normal and the variable 
+
         - Kill Difference
         - Gold Difference (estimated as measured + kill gold)
+        - VisionScoreDiff
         - AverageAllyLvl
         - AverageEnemyLvl
         - Average distance from fountain last few mintues
-        - DragonDiff
+        - DragonsTaken
+        - EnemyDragonsTaken
         - GrubDiff
         - EnemyTop(Mid)(Bot)TurretsTaken
         - AlliedTop(Mid)(Bot)TurretsTaken
@@ -34,9 +42,15 @@ Steps:
         - AlliedNexusTurretsTaken
         - Atakhan (1 if captured, -1 if enemy captured, 0 otherwise)
         - HasSoul
+        - HasShelly
         - HasBaron
         - HasElder
+        - ?? Relating to which objectives are up (BaronUp, DrakeUp)
+            This could be important if one team has way more vision around obj
+
         - Time
+        - Rank#
+        - Patch#
        
 
 
