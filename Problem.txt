@@ -7,14 +7,37 @@ Have a method of updating the calculated win probability added, considering upda
 
 
 Steps:
-1. Train a model to predict win probability
-    - 
+1. Calculate the win probability before the objective is taken and subtract the end-game state from the win probability. Average across all games.
+    - Each gamestate will be its own row(there will be many different rows of the same match)
+    - Identify when objective is taken ---> measure gamestate at proceeding minute ---> take into account events that happen between preceeding measurement and objective capture
+    
+    Feature list: (* = static, # = nonfeature)
+        - CCScore*
+        - IsSquishy*
+        - VsSquishy*
+        - IsHeavyAD*
+        - VsHeavyAD*
+        - IsHeavyAP*
+        - VsHeavyAP*
+        - Kill Difference
+        - Gold Difference (estimated as measured + kill gold)
+        - AverageAllyLvl
+        - AverageEnemyLvl
+        - Average distance from fountain last few mintues
+        - DragonDiff
+        - GrubDiff
+        - EnemyTop(Mid)(Bot)TurretsTaken
+        - AlliedTop(Mid)(Bot)TurretsTaken
+        - EnemyInhibsTaken
+        - AlliedInhibsTaken
+        - EnemyNexusTurretsTaken
+        - AlliedNexusTurretsTaken
+        - Atakhan (1 if captured, -1 if enemy captured, 0 otherwise)
+        - HasSoul
+        - HasBaron
+        - HasElder
+        - Time
+       
 
 
-
-2. Calculate the win probability before the objective is taken and subtract the end-game state from the win probability. Average across all games.
-3. Create a user interface that allows a user to filter through different game states, calculating the win probability added for each objective on request. 
-
-
-Problem:
-    What are the features we need to collect given that we are trying to predict probabilty at an arbitrary time t.
+2. Create a user interface that allows a user to filter through different game states, calculating the win probability added for each objective on request. 
