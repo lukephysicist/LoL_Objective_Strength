@@ -18,13 +18,7 @@ Steps:
         - EnemyCCScore*
         - IsSquishy*
         - VsSquishy*
-        - ADZScore
-        - EnemyADZScore
-        - APZScore
-        - EnemyAPZScore
-            - For Heavy AD/AP features, I will create a distribution of magic/physical damage as proportion
-            of total damage done, which I assume will be normal and the variable 
-
+        - damageTypeRatio
         - Kill Difference
         - Gold Difference (estimated as measured + kill gold)
         - VisionScoreDiff

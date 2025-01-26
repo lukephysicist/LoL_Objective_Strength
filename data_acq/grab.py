@@ -51,8 +51,20 @@ def team_is_squishy(match, team):
     return 1 if team_frontline_score < 2 else 0
 
 
-def team_is_heavy_ad(timeline, team, game_minute):
-    return 
+def damage_type_ratio(timeline, game_minute, team):
+    
+    for frame in timeline['info']['frames'][1:]:
+        if timestamp_matcher(frame['timestamp'], game_minute):
+            if team == 100:
+                blue_magic = sum([value['damageStats']["magicDamageDoneToChampions"] for value in list(frame['participantFrames'].values())[:5]])
+                blue_phys = sum([value['damageStats']["physicalDamageDoneToChampions"] for value in list(frame['participantFrames'].values())[:5]])
+                return blue_phys/blue_magic
+            else:
+                red_magic = sum([value['damageStats']["magicDamageDoneToChampions"] for value in list(frame['participantFrames'].values())[5:]])
+                red_phys = sum([value['damageStats']["physicalDamageDoneToChampions"] for value in list(frame['participantFrames'].values())[5:]])
+                return red_phys/red_magic
+        else:
+            continue
 
 
 
