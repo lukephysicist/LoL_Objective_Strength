@@ -1,5 +1,7 @@
-from event_names import objective_events, stat_events
 import grab as gb
+import numpy as np
+
+
 
 def master(timeline, team):
     frames = timeline['info']['frames']
@@ -19,12 +21,20 @@ def master(timeline, team):
 
             }
             if event['type'] == "CHAMPION_KILL":
-                killer = 100 if event['killerId'] < 6 else 200
-                if team == killer:
-                    intra_minute["kill_diff"] += 1
-                    intra_minute["gold_diff"] += event["bounty"] + event["shutdown_bounty"]
+                gold_diff, kill_diff = gb.champ_kill_update(event, team)
+                intra_minute["gold_diff"] += gold_diff
+                intra_minute["kill_diff"] += kill_diff
+
+            elif event['type'] == "LEVEL_UP":
+                leveler = 100 if event["participantId"] < 6 else 200
+                if leveler == team:
+                    intra_minute["allied_lvl_ups"] += 1
                 else:
-                    intra_minute["kill_diff"] -= 1
-                    intra_minute["gold_diff"] -= event["bounty"] - event["shutdown_bounty"]
+                    intra_minute["enemy_lvl_ups"] += 1
+
+            elif event['type'] == "ELITE_MONSTER_KILL":
+                
+
+            
 
                 

@@ -1,0 +1,229 @@
+{
+    "assistingParticipantIds": [
+        9
+    ],
+    "bounty": 300,
+    "killStreakLength": 0,
+    "killerId": 6,
+    "position": {
+        "x": 6568,
+        "y": 13772
+    },
+    "shutdownBounty": 295,
+    "timestamp": 1007332,
+    "type": "CHAMPION_KILL",
+    "victimDamageDealt": [
+        {
+            "basic": false,
+            "magicDamage": 0,
+            "name": "Vayne",
+            "participantId": 6,
+            "physicalDamage": 84,
+            "spellName": "",
+            "spellSlot": 7,
+            "trueDamage": 0,
+            "type": "OTHER"
+        },
+        {
+            "basic": true,
+            "magicDamage": 0,
+            "name": "Vayne",
+            "participantId": 6,
+            "physicalDamage": 352,
+            "spellName": "vaynetumble",
+            "spellSlot": 0,
+            "trueDamage": 0,
+            "type": "OTHER"
+        },
+        {
+            "basic": false,
+            "magicDamage": 0,
+            "name": "Vayne",
+            "participantId": 6,
+            "physicalDamage": 207,
+            "spellName": "vaynetumble",
+            "spellSlot": 0,
+            "trueDamage": 0,
+            "type": "OTHER"
+        },
+        {
+            "basic": false,
+            "magicDamage": 0,
+            "name": "Vayne",
+            "participantId": 6,
+            "physicalDamage": 0,
+            "spellName": "vaynesilveredbolts",
+            "spellSlot": 1,
+            "trueDamage": 439,
+            "type": "OTHER"
+        },
+        {
+            "basic": true,
+            "magicDamage": 0,
+            "name": "Vayne",
+            "participantId": 6,
+            "physicalDamage": 66,
+            "spellName": "vaynebasicattack",
+            "spellSlot": 64,
+            "trueDamage": 0,
+            "type": "OTHER"
+        },
+        {
+            "basic": true,
+            "magicDamage": 0,
+            "name": "Vayne",
+            "participantId": 6,
+            "physicalDamage": 157,
+            "spellName": "vaynebasicattack2",
+            "spellSlot": 65,
+            "trueDamage": 0,
+            "type": "OTHER"
+        },
+        {
+            "basic": false,
+            "magicDamage": 0,
+            "name": "Vayne",
+            "participantId": 6,
+            "physicalDamage": 273,
+            "spellName": "",
+            "spellSlot": 0,
+            "trueDamage": 0,
+            "type": "OTHER"
+        }
+    ],
+    "victimDamageReceived": [
+        {
+            "basic": true,
+            "magicDamage": 0,
+            "name": "Draven",
+            "participantId": 9,
+            "physicalDamage": 129,
+            "spellName": "dravenbasicattack",
+            "spellSlot": 64,
+            "trueDamage": 0,
+            "type": "OTHER"
+        },
+        {
+            "basic": false,
+            "magicDamage": 0,
+            "name": "Draven",
+            "participantId": 9,
+            "physicalDamage": 54,
+            "spellName": "",
+            "spellSlot": -1,
+            "trueDamage": 0,
+            "type": "OTHER"
+        },
+        {
+            "basic": false,
+            "magicDamage": 0,
+            "name": "Draven",
+            "participantId": 9,
+            "physicalDamage": 82,
+            "spellName": "dravendoubleshot",
+            "spellSlot": 2,
+            "trueDamage": 0,
+            "type": "OTHER"
+        },
+        {
+            "basic": false,
+            "magicDamage": 0,
+            "name": "Draven",
+            "participantId": 9,
+            "physicalDamage": 301,
+            "spellName": "dravenspinning",
+            "spellSlot": 0,
+            "trueDamage": 0,
+            "type": "OTHER"
+        },
+        {
+            "basic": false,
+            "magicDamage": 155,
+            "name": "Maokai",
+            "participantId": 6,
+            "physicalDamage": 0,
+            "spellName": "maokair",
+            "spellSlot": 3,
+            "trueDamage": 0,
+            "type": "OTHER"
+        },
+        {
+            "basic": false,
+            "magicDamage": 24,
+            "name": "Maokai",
+            "participantId": 6,
+            "physicalDamage": 0,
+            "spellName": "",
+            "spellSlot": -1,
+            "trueDamage": 0,
+            "type": "OTHER"
+        },
+        {
+            "basic": false,
+            "magicDamage": 96,
+            "name": "Maokai",
+            "participantId": 6,
+            "physicalDamage": 0,
+            "spellName": "",
+            "spellSlot": -1,
+            "trueDamage": 0,
+            "type": "OTHER"
+        },
+        {
+            "basic": false,
+            "magicDamage": 426,
+            "name": "Maokai",
+            "participantId": 6,
+            "physicalDamage": 0,
+            "spellName": "maokaiq",
+            "spellSlot": 0,
+            "trueDamage": 0,
+            "type": "OTHER"
+        },
+        {
+            "basic": false,
+            "magicDamage": 0,
+            "name": "Maokai",
+            "participantId": 6,
+            "physicalDamage": 0,
+            "spellName": "maokaie",
+            "spellSlot": 2,
+            "trueDamage": 0,
+            "type": "OTHER"
+        },
+        {
+            "basic": true,
+            "magicDamage": 0,
+            "name": "Maokai",
+            "participantId": 6,
+            "physicalDamage": 52,
+            "spellName": "maokaibasicattack",
+            "spellSlot": 64,
+            "trueDamage": 0,
+            "type": "OTHER"
+        },
+        {
+            "basic": false,
+            "magicDamage": 152,
+            "name": "Maokai",
+            "participantId": 6,
+            "physicalDamage": 0,
+            "spellName": "maokaiw",
+            "spellSlot": 1,
+            "trueDamage": 0,
+            "type": "OTHER"
+        },
+        {
+            "basic": true,
+            "magicDamage": 0,
+            "name": "Maokai",
+            "participantId": 6,
+            "physicalDamage": 156,
+            "spellName": "maokaipassive",
+            "spellSlot": 63,
+            "trueDamage": 0,
+            "type": "OTHER"
+        }
+    ],
+    "victimId": 1
+}

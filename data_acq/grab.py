@@ -67,6 +67,34 @@ def damage_type_ratio(timeline, game_minute, team):
             continue
 
 
+############
+## EVENTS ##
+############
+
+def champ_kill_update(event, team): # returns tuple (gold_diff, kill_diff)
+    killer = 100 if event['killerId'] < 6 else 200
+    kill_diff = 0
+    gold_diff = 0
+    if team == killer:
+        kill_diff += 1
+        gold_diff += event["bounty"] + event["shutdownBounty"]
+        assist_pool = (.7*event["bounty"]) + (.28*event["shutdownBounty"])
+        n_assistants = len(event['assistingParticipantIds'])
+        if (assist_pool/n_assistants) > 150:
+            gold_diff += (n_assistants*150)
+        else:
+            gold_diff += (assist_pool)
+    else:
+        kill_diff -= 1
+        gold_diff -= event["bounty"] + event["shutdownBounty"]
+        assist_pool = (.7*event["bounty"]) + (.28*event["shutdownBounty"])
+        n_assistants = len(event['assistingParticipantIds'])
+        if (assist_pool/n_assistants) > 150:
+            gold_diff -= (n_assistants*150)
+        else:
+            gold_diff -= (assist_pool)
+    
+    return (gold_diff, kill_diff)
 
 ###################
 ## MISCELLANEOUS ##
