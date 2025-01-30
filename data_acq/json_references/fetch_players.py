@@ -53,7 +53,7 @@ async def main():
         players = await fetch_players(client, "PLATINUM")
         print(f"Total players emerald players retrieved: {len(players)}")
 
-    json_path = os.path.join(script_dir, "json_references", "platinum.json")
+    json_path = os.path.join(script_dir, "platinum.json")
     with open(json_path, 'w') as file:
         json.dump(players, file, indent=4)
 
@@ -63,7 +63,7 @@ async def main():
         players = await fetch_players(client, "EMERALD")
         print(f"Total players emerald players retrieved: {len(players)}")
 
-    json_path = os.path.join(script_dir, "json_references", "emerald.json")
+    json_path = os.path.join(script_dir, "emerald.json")
     with open(json_path, 'w') as file:
         json.dump(players, file, indent=4)
 
@@ -73,7 +73,7 @@ async def main():
         players = await fetch_players(client, "DIAMOND")
         print(f"Total players emerald players retrieved: {len(players)}")
 
-    json_path = os.path.join(script_dir, "json_references", "diamond.json")
+    json_path = os.path.join(script_dir, "diamond.json")
     with open(json_path, 'w') as file:
         json.dump(players, file, indent=4)
 
@@ -88,7 +88,7 @@ async def main():
             all_players.extend(response['entries'])
         print(f"Total players master players retrieved: {len(all_players)}")
 
-    json_path = os.path.join(script_dir, "json_references", "master.json")
+    json_path = os.path.join(script_dir, "master.json")
     with open(json_path, 'w') as file:
         json.dump(all_players, file, indent=4)
 
@@ -103,7 +103,7 @@ async def main():
             all_players.extend(response['entries'])
         print(f"Total players grandmaster players retrieved: {len(all_players)}")
 
-    json_path = os.path.join(script_dir, "json_references", "grandmaster.json")
+    json_path = os.path.join(script_dir, "grandmaster.json")
     with open(json_path, 'w') as file:
         json.dump(all_players, file, indent=4)
 
@@ -118,7 +118,7 @@ async def main():
             all_players.extend(response['entries'])
         print(f"Total players challenger players retrieved: {len(all_players)}")
 
-    json_path = os.path.join(script_dir, "json_references", "challenger.json")
+    json_path = os.path.join(script_dir, "challenger.json")
     with open(json_path, 'w') as file:
         json.dump(all_players, file, indent=4)
     

@@ -11,7 +11,7 @@ Steps:
     - Each gamestate will be its own row(there will be many different rows of the same match)
     - Identify when objective is taken ---> measure gamestate at proceeding minute ---> take into account events that happen between preceeding measurement and objective capture
     
-    Feature list: (* = static, # = nonfeature)
+    Feature list: (* = static, # = nonfeature) (% = running track across frames)
         - GameID#
         - TeamID#
         - CCScore*
@@ -19,32 +19,38 @@ Steps:
         - IsSquishy*
         - VsSquishy*
         - damageTypeRatio
-        - Kill Difference
+        - Kill Difference %
         - Gold Difference (estimated as measured + kill gold)
-        - VisionScoreDiff
+        - VisionScoreDiff (should this be changed to something that counts number of wards out, or maybe relate
+                            to objectives somehow)
         - AverageAllyLvl
         - AverageEnemyLvl
-        - Average distance from fountain last few mintues
-        - DragonsTaken
-        - EnemyDragonsTaken
-        - GrubDiff
-        - EnemyTop(Mid)(Bot)TurretsTaken
-        - AlliedTop(Mid)(Bot)TurretsTaken
-        - EnemyInhibsTaken
-        - AlliedInhibsTaken
-        - EnemyNexusTurretsTaken
-        - AlliedNexusTurretsTaken
-        - Atakhan (1 if captured, -1 if enemy captured, 0 otherwise)
-        - HasSoul
-        - HasShelly
-        - HasBaron
-        - HasElder
+        - Average distance from fountain last few mintues %
+        - DragonsTaken % 
+        - EnemyDragonsTaken %
+        - GrubDiff %
+        - EnemyTop(Mid)(Bot)TurretsTaken %
+        - AlliedTop(Mid)(Bot)TurretsTaken %
+        - EnemyInhibsTaken %
+        - AlliedInhibsTaken %
+        - EnemyNexusTurretsTaken %
+        - AlliedNexusTurretsTaken %
+        - Atakhan (1 if captured, -1 if enemy captured, 0 otherwise) %
+        - HasSoul %
+        - HasShelly %
+        - HasBaron %
+        - HasElder %
         - ?? Relating to which objectives are up (BaronUp, DrakeUp)
             This could be important if one team has way more vision around obj
 
+        - ObjectiveTaken
         - Time
         - Rank#
+        - Region#
         - Patch#
+
+    Objectives Tracked:
+    
        
 
 
