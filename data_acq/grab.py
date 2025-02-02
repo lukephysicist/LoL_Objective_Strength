@@ -51,20 +51,16 @@ def team_is_squishy(match, team):
     return 1 if team_frontline_score < 2 else 0
 
 
-def damage_type_ratio(timeline, game_minute, team):
-    
-    for frame in timeline['info']['frames'][1:]:
-        if timestamp_matcher(frame['timestamp'], game_minute):
-            if team == 100:
-                blue_magic = sum([value['damageStats']["magicDamageDoneToChampions"] for value in list(frame['participantFrames'].values())[:5]])
-                blue_phys = sum([value['damageStats']["physicalDamageDoneToChampions"] for value in list(frame['participantFrames'].values())[:5]])
-                return blue_phys/blue_magic
-            else:
-                red_magic = sum([value['damageStats']["magicDamageDoneToChampions"] for value in list(frame['participantFrames'].values())[5:]])
-                red_phys = sum([value['damageStats']["physicalDamageDoneToChampions"] for value in list(frame['participantFrames'].values())[5:]])
-                return red_phys/red_magic
-        else:
-            continue
+def damage_type_ratio(snapshot, team):
+    if team == 100:
+        blue_magic = sum([value['damageStats']["magicDamageDoneToChampions"] for value in list(snapshot.values())[:5]])
+        blue_phys = sum([value['damageStats']["physicalDamageDoneToChampions"] for value in list(snapshot.values())[:5]])
+        return blue_phys/blue_magic
+    else:
+        red_magic = sum([value['damageStats']["magicDamageDoneToChampions"] for value in list(snapshot.values())[5:]])
+        red_phys = sum([value['damageStats']["physicalDamageDoneToChampions"] for value in list(snapshot.values())[5:]])
+        return red_phys/red_magic
+
 
 
 ############
@@ -96,10 +92,28 @@ def champ_kill_update(event, team): # returns tuple (gold_diff, kill_diff)
     
     return (gold_diff, kill_diff)
 
+
+##################
+##### STATS ######
+##################
+
+
+
 ###################
 ## MISCELLANEOUS ##
 ###################
 
+def create_feature_row_vector(match, team, snapshot, event, inter_minute):
+    enemy_team = 100 if (team == 200) else 100
+    vector = [
+        get_aggregate_cc_rating(match, team),                   #cCScore
+        get_aggregate_cc_rating(match, enemy_team),             #enemyCCScore
+        team_is_squishy(match, team),                           #isSquishy
+        team_is_squishy(match, enemy_team),                     #vsSquishy
+        damage_type_ratio(snapshot, team),                      #damageTypeRatio
+
+    ]
+    
 def pick_team(match, team):
     participants = match['info']['participants']
     if team == 100:
