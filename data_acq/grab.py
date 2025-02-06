@@ -97,22 +97,32 @@ def champ_kill_update(event, team): # returns tuple (gold_diff, kill_diff)
 ##### STATS ######
 ##################
 
+def get_gold_difference(snapshot, intra_minute, team):
+    blue = sum([value['totalGold'] for value in list(snapshot.values())[:5]])
+    red = sum([value['totalGold'] for value in list(snapshot.values())[5:]])
 
+    difference = (blue-red) if team == 100 else (red-blue)
+    if team == 100: 
+        difference += intra_minute['gold_diff']
+    else:
+        difference -= intra_minute['gold_diff']
+    return difference
 
 ###################
 ## MISCELLANEOUS ##
 ###################
 
-def create_feature_row_vector(match, team, snapshot, event, inter_minute):
+def create_feature_row_vector(match, team, snapshot, event, inter_minute, intra_minute):
     enemy_team = 100 if (team == 200) else 100
-    vector = [
+    vector = (
         get_aggregate_cc_rating(match, team),                   #cCScore
         get_aggregate_cc_rating(match, enemy_team),             #enemyCCScore
         team_is_squishy(match, team),                           #isSquishy
         team_is_squishy(match, enemy_team),                     #vsSquishy
         damage_type_ratio(snapshot, team),                      #damageTypeRatio
+        get_gold_difference(snapshot, intra_minute, team)       #goldDifference
 
-    ]
+    )
     
 def pick_team(match, team):
     participants = match['info']['participants']

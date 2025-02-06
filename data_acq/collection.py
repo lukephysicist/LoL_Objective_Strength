@@ -45,8 +45,7 @@ def master(match, timeline, team):
                 "kill_diff": 0,
                 "gold_diff": 0,
                 "allied_lvl_ups": 0,
-                "enemy_lvl_ups": 0,
-
+                "enemy_lvl_ups": 0
             }
             if event['type'] == "CHAMPION_KILL":
                 gold_diff, kill_diff = gb.champ_kill_update(event, team)
@@ -64,11 +63,11 @@ def master(match, timeline, team):
             # Objective events where row writes occur
             elif event['type'] == "ELITE_MONSTER_KILL":
                 if event['monsterType'] == "HORDE":
-                    vector = [
+                    vector = (
                         timeline["metadata"]["matchId"],
                         team,
-                    ]
-                    vector.extend(gb.create_feature_row_vector(match, team, snapshot, event, inter_minute))
+                    )
+                    vector.extend(gb.create_feature_row_vector(match, team, snapshot, event, inter_minute, intra_minute))
                     
 
     prev_snapshot = frame["participantFrames"]
