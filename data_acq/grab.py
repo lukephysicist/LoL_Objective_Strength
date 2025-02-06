@@ -101,27 +101,59 @@ def get_gold_difference(snapshot, intra_minute, team):
     blue = sum([value['totalGold'] for value in list(snapshot.values())[:5]])
     red = sum([value['totalGold'] for value in list(snapshot.values())[5:]])
 
-    difference = (blue-red) if team == 100 else (red-blue)
-    if team == 100: 
-        difference += intra_minute['gold_diff']
-    else:
-        difference -= intra_minute['gold_diff']
+    print(red, blue)
+
+    difference = blue - red + intra_minute['gold_diff'] if team == 100 else red - blue + intra_minute['gold_diff']
+
     return difference
+
+def get_avg_level(snapshot, intra_minute, team):
+    if team == 100:
+        aggregate = sum([value['level'] for value in list(snapshot.values())[:5]]) 
+        aggregate += intra_minute['allied_lvl_ups']
+    else:
+        aggregate = sum([value['level'] for value in list(snapshot.values())[5:]]) 
+        aggregate += intra_minute['enemy_lvl_ups']
+    return aggregate / 5
+    
+
+def avg_distance_to_fountain(snapshot, team):
+    positions = np.array([list(p['position'].values()) for p in snapshot.values()])
+    
+    if team == 100:
+        fountain = np.array([499.4, 386])
+        distances = np.linalg.norm(positions[:5] - fountain, axis=1)
+    else: 
+        fountain = np.array([14445.4, 14316])
+        distances = np.linalg.norm(positions[5:] - fountain, axis=1)
+    
+    return np.mean(distances)
 
 ###################
 ## MISCELLANEOUS ##
 ###################
 
-def create_feature_row_vector(match, team, snapshot, event, inter_minute, intra_minute):
+def grab_static_features(match, team):
+    enemy_team = 100 if team==200 else 100
+    vector = (
+        match['metadata']['matchId'],                               #matchId #
+        team,                                                       #team    #
+        get_aggregate_cc_rating(match, team),                       #CCScore
+        get_aggregate_cc_rating(match, enemy_team),                 #enemyCCScore
+        team_is_squishy(match, team),                               #isSquishy
+        team_is_squishy(match, enemy_team),                         #vsSquishy
+    )
+    return vector
+
+def create_dynamic_features(team, snapshot, event, inter_minute, intra_minute, etype):
     enemy_team = 100 if (team == 200) else 100
     vector = (
-        get_aggregate_cc_rating(match, team),                   #cCScore
-        get_aggregate_cc_rating(match, enemy_team),             #enemyCCScore
-        team_is_squishy(match, team),                           #isSquishy
-        team_is_squishy(match, enemy_team),                     #vsSquishy
-        damage_type_ratio(snapshot, team),                      #damageTypeRatio
-        get_gold_difference(snapshot, intra_minute, team)       #goldDifference
-
+        damage_type_ratio(snapshot, team),                          #damageTypeRatio
+        get_gold_difference(snapshot, intra_minute, team),          #goldDifference
+        get_avg_level(snapshot, intra_minute, team),                #averageAllyLvl
+        get_avg_level(snapshot, intra_minute, enemy_team),          #averageEnemyLvl 
+        np.mean(inter_minute["allied_average_distance_fountain"]),  #averageAllyToFountain
+        np.mean(inter_minute['enemy_average_distance_fountain']),   #averageEnemytoFountain
     )
     
 def pick_team(match, team):

@@ -21,11 +21,10 @@ Steps:
         - VsSquishy*
         - damageTypeRatio
         - Gold Difference (estimated as measured + kill gold)
-        - VisionScoreDiff (should this be changed to something that counts number of wards out, or maybe relate
-                            to objectives somehow)
         - AverageAllyLvl
         - AverageEnemyLvl
         - Average distance from fountain last few mintues %
+        - avg enemy distance to fountain %
         - DragonsTaken % 
         - EnemyDragonsTaken %
         - AlliedGrubs %

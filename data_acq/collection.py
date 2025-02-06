@@ -1,10 +1,19 @@
 import grab as gb
-import numpy as np
 
+def write_row_vector():
+    pass
+
+def combine_features(statics, dynamics, misc):
+    return statics + dynamics + misc
 
 def master(match, timeline, team):
-    frames = timeline['info']['frames']
+    # get static features
+    statics = gb.grab_static_features(match, team)
+    # get misc cols
+    misc = None
 
+    frames = timeline['info']['frames']
+    enemy_team = 200 if team==100 else 100
     inter_minute = {
         "allied_dragons": 0,
         "enemy_dragons": 0,
@@ -16,7 +25,7 @@ def master(match, timeline, team):
         "enemy_mid_turrets_taken": 0,
         "bot_turrets_taken": 0,
         "enemy_bot_turrets_taken": 0,
-        "inhibitors_taken" :0,
+        "inhibitors_taken": 0,
         "enemy_inhibitors_taken": 0,
         "nexus_turrets_taken": 0,
         "enemy_nexus_turrets_taken": 0,
@@ -34,25 +43,44 @@ def master(match, timeline, team):
 
         "allied_respawns": [], ###### lists that will hold respawn timestamps used to calculate: average_team_respawn (x seconds)
         "enemy_respawns": [],  ######
+
+        "allied_average_distance_fountain" : [],
+        "enemy_average_distance_fountain" : []
     }
-    prev_snapshot = None
-    for frame in frames:
+    prev_snapshot = frames[0]['participantFrames']
+
+    # loop through minutes
+    for frame in frames[1:]:
         events = frame['events']
         snapshot = prev_snapshot
 
+        # update distance to fountain
+        ally_dist = inter_minute["allied_average_distance_fountain"]
+        enemy_dist = inter_minute["enemy_average_distance_fountain"]
+        
+        ally_dist.append(gb.avg_distance_to_fountain(snapshot, team))
+        enemy_dist.append(gb.avg_distance_to_fountain(snapshot, enemy_team))
+        if len(ally_dist) > 3:
+            ally_dist.pop(0)
+        if len(enemy_dist) > 3:
+            enemy_dist.pop(0)
+
+        # loop through events in minute
         for event in events:
+            etype = event['type']
             intra_minute = {
                 "kill_diff": 0,
                 "gold_diff": 0,
                 "allied_lvl_ups": 0,
                 "enemy_lvl_ups": 0
             }
-            if event['type'] == "CHAMPION_KILL":
+            # updating gold, kills, levels
+            if etype == "CHAMPION_KILL":
                 gold_diff, kill_diff = gb.champ_kill_update(event, team)
                 intra_minute["gold_diff"] += gold_diff
                 intra_minute["kill_diff"] += kill_diff
 
-            elif event['type'] == "LEVEL_UP":
+            elif etype == "LEVEL_UP":
                 leveler = 100 if event["participantId"] < 6 else 200
                 if leveler == team:
                     intra_minute["allied_lvl_ups"] += 1
@@ -61,13 +89,21 @@ def master(match, timeline, team):
 
 
             # Objective events where row writes occur
-            elif event['type'] == "ELITE_MONSTER_KILL":
+
+            elif etype == "ELITE_MONSTER_KILL":
                 if event['monsterType'] == "HORDE":
-                    vector = (
-                        timeline["metadata"]["matchId"],
-                        team,
-                    )
-                    vector.extend(gb.create_feature_row_vector(match, team, snapshot, event, inter_minute, intra_minute))
+                    pass
+
+                if event['monsterType'] == "DRAGON":
+                    dynamic = gb.create_dynamic_features(team, snapshot, event, inter_minute, intra_minute, etype)
+                    vector = combine_features(statics, dynamic, misc)
+                    write_row_vector(vector)
+                    
+                    if event['killerTeamId'] == team:
+                        inter_minute['allied_dragons'] += 1
+                    else:
+                        inter_minute['enemy_dragons'] += 1
+
                     
 
     prev_snapshot = frame["participantFrames"]
