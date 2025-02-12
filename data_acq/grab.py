@@ -129,6 +129,21 @@ def avg_distance_to_fountain(snapshot, team):
     
     return np.mean(distances)
 
+def till_nt_respawn(inter_minute, event):
+    now = event['timestamp']
+    
+    allied_nt1_respawn, allied_nt2_respawn = inter_minute['nexus_turrets_respawn']
+    enemy_nt1_respawn, enemy_nt2_respawn = inter_minute['enemy_nexus_turrets_respawn']
+
+    till_allied_nt1 = seconds_till(allied_nt1_respawn, now)
+    till_allied_nt2 = seconds_till(allied_nt2_respawn, now)
+    till_enemy_nt1 = seconds_till(enemy_nt1_respawn, now)
+    till_enemy_nt2 = seconds_till(enemy_nt2_respawn, now)
+
+    return (till_allied_nt1, till_allied_nt2, till_enemy_nt1, till_enemy_nt2)
+
+    
+
 ###################
 ## MISCELLANEOUS ##
 ###################
@@ -147,13 +162,34 @@ def grab_static_features(match, team):
 
 def create_dynamic_features(team, snapshot, event, inter_minute, intra_minute, etype):
     enemy_team = 100 if (team == 200) else 100
+    till_allied_nt1, till_allied_nt2, till_enemy_nt1, till_enemy_nt2 = till_nt_respawn(inter_minute, event)
+
     vector = (
         damage_type_ratio(snapshot, team),                          #damageTypeRatio
         get_gold_difference(snapshot, intra_minute, team),          #goldDifference
         get_avg_level(snapshot, intra_minute, team),                #averageAllyLvl
         get_avg_level(snapshot, intra_minute, enemy_team),          #averageEnemyLvl 
-        np.mean(inter_minute["allied_average_distance_fountain"]),  #averageAllyToFountain
-        np.mean(inter_minute['enemy_average_distance_fountain']),   #averageEnemytoFountain
+        np.mean(inter_minute["allied_distance_fountain"]),          #averageAllyToFountain
+        np.mean(inter_minute['enemy_distance_fountain']),           #averageEnemytoFountain
+        inter_minute['allied_dragons'],                             #alliedDragons
+        inter_minute['enemy_dragons'],                              #enemyDragons
+        inter_minute['allied_grubs'],                               #alliedGrubs
+        inter_minute['enemy_grubs'],                                #enemyGrubs
+        inter_minute['top_turrets_taken'],                          #topTurrets
+        inter_minute["enemy_top_turrets_taken"],                    #enemytopTurrets
+        inter_minute['mid_turrets_taken'],                          #midTurrets
+        inter_minute['enemy_mid_turrets_taken'],                    #enemyMidTurrets
+        inter_minute['bot_turrets_taken'],                          #botTurrets
+        inter_minute['enemy_bot_turrets_taken'],                    #enemyBotTurrets
+        inter_minute["inhibitors_taken"],                           #inhibsTaken
+        inter_minute['enemy_inhibitors_taken'],                     #enemyInhibsTaken
+        till_allied_nt1,                                            #tillAlliedNT1
+        till_allied_nt2,                                            #tillAlliedNT2
+        till_enemy_nt1,                                             #tillEnemyNT1
+        till_enemy_nt2,                                             #tillEnemyNT2
+        inter_minute['feats_of_strength'],                          #featsOfStrength
+        inter_minute['atakhan'],                                    #atakhan
+
     )
     
 def pick_team(match, team):
@@ -187,3 +223,8 @@ def get_patch(match):
     patch = version.split('.')
     
     return ".".join(patch[0,2])
+
+def seconds_till(timestamp, now):
+    till = (timestamp/1000) - (now/1000)
+    return till if till>0 else 0
+   

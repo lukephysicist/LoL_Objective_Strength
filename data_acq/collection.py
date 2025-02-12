@@ -27,7 +27,6 @@ def master(match, timeline, team):
         "enemy_bot_turrets_taken": 0,
         "inhibitors_taken": 0,
         "enemy_inhibitors_taken": 0,
-        "nexus_turrets_taken": 0,
         "enemy_nexus_turrets_taken": 0,
         "feats_of_strength": 0,
         "atakhan": 0,
@@ -35,17 +34,20 @@ def master(match, timeline, team):
         "has_shelly": 0,
         "has_baron": 0,
         "has_elder": 0,
-        "grubs_up_at": 0,   ##############
+        "grubs_up_at": 0,           ##############
         "herald_up_at": 0,     
-        "baron_up_at": 0,   # Timestaps which can then be subtracted from timestamp of the event to calculate: objective_up_in (x seconds)
+        "baron_up_at": 0,           # Timestaps which can then be subtracted from timestamp of the event to calculate: objective_up_in (x seconds)
         "dragon_up_at": 0,
-        "elder_up_at": 0,   #############
+        "elder_up_at": 0,           #############
 
-        "allied_respawns": [], ###### lists that will hold respawn timestamps used to calculate: average_team_respawn (x seconds)
-        "enemy_respawns": [],  ######
+        "nexus_turrets_respawn": [0,0],   ### lists that hold respawn timestamps for nexus turrets
+        "enemy_nexus_turrets_resawn": [0,0],
 
-        "allied_average_distance_fountain" : [],
-        "enemy_average_distance_fountain" : []
+        "allied_respawns": [0,0,0,0,0], ###### lists that will hold respawn timestamps used to calculate: average_team_respawn (x seconds)
+        "enemy_respawns": [0,0,0,0,0],  ######
+
+        "allied_distance_fountain" : [],
+        "enemy_distance_fountain" : []
     }
     prev_snapshot = frames[0]['participantFrames']
 
