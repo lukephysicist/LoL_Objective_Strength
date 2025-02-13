@@ -30,10 +30,12 @@ def master(match, timeline, team):
         "enemy_nexus_turrets_taken": 0,
         "feats_of_strength": 0,
         "atakhan": 0,
-        "has_soul": 0,
+        "has_soul": 0,         
         "has_shelly": 0,
-        "has_baron": 0,
-        "has_elder": 0,
+        
+        "baron_exp_at": 0,          # timestamp when runs out, negative if enemy team has
+        "elder_exp_at": 0,          # timestamp when runs out, negative if enemy team has
+
         "grubs_up_at": 0,           ##############
         "herald_up_at": 0,     
         "baron_up_at": 0,           # Timestaps which can then be subtracted from timestamp of the event to calculate: objective_up_in (x seconds)

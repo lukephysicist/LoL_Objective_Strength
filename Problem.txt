@@ -39,8 +39,8 @@ Steps:
         - Atakhan (1 if captured, -1 if enemy captured, 0 otherwise) %
         - HasSoul %
         - HasShelly %
-        - HasBaron %
-        - HasElder %
+        - untilBaronExp %
+        - untilElderExp %
         - untilGrubs % 
         - untilHerald %
         - untilBaron % 
@@ -48,8 +48,8 @@ Steps:
         - untilElder %
         - averageAlliedRespawn
         - averageEnemyRespawn
+        - secondsElapsed
         - ObjectiveTaken
-        - Time
         - Rank#
         - Region#
         - Patch#

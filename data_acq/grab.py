@@ -129,20 +129,38 @@ def avg_distance_to_fountain(snapshot, team):
     
     return np.mean(distances)
 
-def till_nt_respawn(inter_minute, event):
+
+def till_thing(inter_minute, event, thing):
     now = event['timestamp']
+    if thing == "nt":
+        allied_nt1_respawn, allied_nt2_respawn = inter_minute['nexus_turrets_respawn']
+        enemy_nt1_respawn, enemy_nt2_respawn = inter_minute['enemy_nexus_turrets_respawn']
+
+        till_allied_nt1 = seconds_till(allied_nt1_respawn, now)
+        till_allied_nt2 = seconds_till(allied_nt2_respawn, now)
+        till_enemy_nt1 = seconds_till(enemy_nt1_respawn, now)
+        till_enemy_nt2 = seconds_till(enemy_nt2_respawn, now)
+
+        return (till_allied_nt1, till_allied_nt2, till_enemy_nt1, till_enemy_nt2)
     
-    allied_nt1_respawn, allied_nt2_respawn = inter_minute['nexus_turrets_respawn']
-    enemy_nt1_respawn, enemy_nt2_respawn = inter_minute['enemy_nexus_turrets_respawn']
-
-    till_allied_nt1 = seconds_till(allied_nt1_respawn, now)
-    till_allied_nt2 = seconds_till(allied_nt2_respawn, now)
-    till_enemy_nt1 = seconds_till(enemy_nt1_respawn, now)
-    till_enemy_nt2 = seconds_till(enemy_nt2_respawn, now)
-
-    return (till_allied_nt1, till_allied_nt2, till_enemy_nt1, till_enemy_nt2)
-
+    if thing == "avg_allied_respawn":
+        avg = sum(inter_minute["allied_respawns"]) / 5
+        return seconds_till(avg, now)
     
+    elif thing == "avg_enemy_respawn":
+        avg = sum(inter_minute['enemy_respawns']) / 5
+        return seconds_till(avg, now)
+    
+    else:
+        timestamp = inter_minute[f'{thing}']
+        enemy_has = True if timestamp < 0 else False
+        
+        timestamp = abs(timestamp)
+        if enemy_has:
+            return -seconds_till(timestamp, now)
+        else:
+            return seconds_till(timestamp,now)
+        
 
 ###################
 ## MISCELLANEOUS ##
@@ -160,9 +178,9 @@ def grab_static_features(match, team):
     )
     return vector
 
-def create_dynamic_features(team, snapshot, event, inter_minute, intra_minute, etype):
+def create_dynamic_features(team, snapshot, event, inter_minute, intra_minute):
     enemy_team = 100 if (team == 200) else 100
-    till_allied_nt1, till_allied_nt2, till_enemy_nt1, till_enemy_nt2 = till_nt_respawn(inter_minute, event)
+    till_allied_nt1, till_allied_nt2, till_enemy_nt1, till_enemy_nt2 = till_thing(inter_minute, event, 'nt')
 
     vector = (
         damage_type_ratio(snapshot, team),                          #damageTypeRatio
@@ -189,7 +207,19 @@ def create_dynamic_features(team, snapshot, event, inter_minute, intra_minute, e
         till_enemy_nt2,                                             #tillEnemyNT2
         inter_minute['feats_of_strength'],                          #featsOfStrength
         inter_minute['atakhan'],                                    #atakhan
-
+        inter_minute['has_soul'],                                   #hasSoul
+        inter_minute['has_shelly'],                                 #hasShelly        
+        till_thing(inter_minute, event, "baron_exp_at"),            #untilBaronExp
+        till_thing(inter_minute, event, "elder_exp_at"),            #untilElderExp
+        till_thing(inter_minute, event, "grubs_up_at"),             #untilGrubsSpawn
+        till_thing(inter_minute, event, "herald_up_at"),            #untilHeraldSpawn
+        till_thing(inter_minute, event, "baron_up_at"),             #untilBaronSpawn
+        till_thing(inter_minute, event, "dragon_up_at"),            #untilDragonSpawn
+        till_thing(inter_minute, event, "elder_up_at"),             #untilElderSpawn
+        till_thing(inter_minute, event, "avg_allied_respawn"),      #avgAlliedRespawn
+        till_thing(inter_minute, event, "avg_enemy_respawn"),       #avgEnemyRespawn
+        event['timestamp'] / 60000,                                 #secondsElapsed
+        event_objective_map[event['type']]                         #objective        
     )
     
 def pick_team(match, team):
@@ -225,6 +255,10 @@ def get_patch(match):
     return ".".join(patch[0,2])
 
 def seconds_till(timestamp, now):
-    till = (timestamp/1000) - (now/1000)
+    till = (timestamp - now)/1000
     return till if till>0 else 0
+
+event_objective_map = {
+
+}
    
