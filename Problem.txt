@@ -55,8 +55,26 @@ Steps:
         - Patch#
 
     Objectives Tracked:
-    
+        - Dragons
+        - Grubs
+        - Rift Herald
+        - Baron
+        - Elder Dragon
+        - Soul
+        - Atahkan
+        - Any Tower
+        - Any Inhib
+        
+    Timestamps:
+        First dragon: 5 min 
+        next drag: 5 min after kill
+        first grub camp: 6 min   
+        next grub camp: 4 min after (despawn at 15:45)
+        rift hearld: 16 min (despawn at 24:45)
+        Baron: 25 min (3 min buff)
+        next baron: 6 min after
+        atakhan: 20 min
+        Elder: 6 min after soul (and  6 min after elder) (2.5 min buff)
        
-
 
 2. Create a user interface that allows a user to filter through different game states, calculating the win probability added for each objective on request. 

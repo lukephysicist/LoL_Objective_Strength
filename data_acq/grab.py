@@ -67,30 +67,17 @@ def damage_type_ratio(snapshot, team):
 ## EVENTS ##
 ############
 
-def champ_kill_update(event, team): # returns tuple (gold_diff, kill_diff)
-    killer = 100 if event['killerId'] < 6 else 200
-    kill_diff = 0
-    gold_diff = 0
-    if team == killer:
-        kill_diff += 1
-        gold_diff += event["bounty"] + event["shutdownBounty"]
-        assist_pool = (.7*event["bounty"]) + (.28*event["shutdownBounty"])
-        n_assistants = len(event['assistingParticipantIds'])
-        if (assist_pool/n_assistants) > 150:
-            gold_diff += (n_assistants*150)
-        else:
-            gold_diff += (assist_pool)
+def blue_gold_from_kill(event, blue_killed):
+
+    gold_diff = event["bounty"] + event["shutdownBounty"]
+    assist_pool = (.7*event["bounty"]) + (.28*event["shutdownBounty"])
+    n_assistants = len(event['assistingParticipantIds'])
+    if (assist_pool/n_assistants) > 150:
+        gold_diff += (n_assistants*150)
     else:
-        kill_diff -= 1
-        gold_diff -= event["bounty"] + event["shutdownBounty"]
-        assist_pool = (.7*event["bounty"]) + (.28*event["shutdownBounty"])
-        n_assistants = len(event['assistingParticipantIds'])
-        if (assist_pool/n_assistants) > 150:
-            gold_diff -= (n_assistants*150)
-        else:
-            gold_diff -= (assist_pool)
+        gold_diff += (assist_pool)
     
-    return (gold_diff, kill_diff)
+    return gold_diff if blue_killed else -gold_diff
 
 
 ##################
@@ -100,8 +87,6 @@ def champ_kill_update(event, team): # returns tuple (gold_diff, kill_diff)
 def get_gold_difference(snapshot, intra_minute, team):
     blue = sum([value['totalGold'] for value in list(snapshot.values())[:5]])
     red = sum([value['totalGold'] for value in list(snapshot.values())[5:]])
-
-    print(red, blue)
 
     difference = blue - red + intra_minute['gold_diff'] if team == 100 else red - blue + intra_minute['gold_diff']
 
@@ -117,17 +102,16 @@ def get_avg_level(snapshot, intra_minute, team):
     return aggregate / 5
     
 
-def avg_distance_to_fountain(snapshot, team):
+def avg_distance_to_fountain(snapshot):
     positions = np.array([list(p['position'].values()) for p in snapshot.values()])
     
-    if team == 100:
-        fountain = np.array([499.4, 386])
-        distances = np.linalg.norm(positions[:5] - fountain, axis=1)
-    else: 
-        fountain = np.array([14445.4, 14316])
-        distances = np.linalg.norm(positions[5:] - fountain, axis=1)
+    blue_fountain = np.array([499.4, 386])
+    blue_distances = np.linalg.norm(positions[:5] - blue_fountain, axis=1)
+     
+    red_fountain = np.array([14445.4, 14316])
+    red_distances = np.linalg.norm(positions[5:] - red_fountain, axis=1)
     
-    return np.mean(distances)
+    return (np.mean(blue_distances), np.mean(red_distances))
 
 
 def till_thing(inter_minute, event, thing):
@@ -151,6 +135,16 @@ def till_thing(inter_minute, event, thing):
         avg = sum(inter_minute['enemy_respawns']) / 5
         return seconds_till(avg, now)
     
+    elif thing in ["baron_exp_at", "elder_exp_at"]:
+        timestamp = inter_minute[thing]
+        enemy_has = True if timestamp < 0 else False
+        timestamp = abs(timestamp)
+       
+        if enemy_has:
+            return -seconds_till(timestamp, now)
+        else:
+            return seconds_till(timestamp, now) 
+    
     else:
         timestamp = inter_minute[f'{thing}']
         enemy_has = True if timestamp < 0 else False
@@ -166,17 +160,6 @@ def till_thing(inter_minute, event, thing):
 ## MISCELLANEOUS ##
 ###################
 
-def grab_static_features(match, team):
-    enemy_team = 100 if team==200 else 100
-    vector = (
-        match['metadata']['matchId'],                               #matchId #
-        team,                                                       #team    #
-        get_aggregate_cc_rating(match, team),                       #CCScore
-        get_aggregate_cc_rating(match, enemy_team),                 #enemyCCScore
-        team_is_squishy(match, team),                               #isSquishy
-        team_is_squishy(match, enemy_team),                         #vsSquishy
-    )
-    return vector
 
 def create_dynamic_features(team, snapshot, event, inter_minute, intra_minute):
     enemy_team = 100 if (team == 200) else 100
@@ -208,7 +191,7 @@ def create_dynamic_features(team, snapshot, event, inter_minute, intra_minute):
         inter_minute['feats_of_strength'],                          #featsOfStrength
         inter_minute['atakhan'],                                    #atakhan
         inter_minute['has_soul'],                                   #hasSoul
-        inter_minute['has_shelly'],                                 #hasShelly        
+        inter_minute['killed_herald'],                              #killedHerald       
         till_thing(inter_minute, event, "baron_exp_at"),            #untilBaronExp
         till_thing(inter_minute, event, "elder_exp_at"),            #untilElderExp
         till_thing(inter_minute, event, "grubs_up_at"),             #untilGrubsSpawn
@@ -218,10 +201,12 @@ def create_dynamic_features(team, snapshot, event, inter_minute, intra_minute):
         till_thing(inter_minute, event, "elder_up_at"),             #untilElderSpawn
         till_thing(inter_minute, event, "avg_allied_respawn"),      #avgAlliedRespawn
         till_thing(inter_minute, event, "avg_enemy_respawn"),       #avgEnemyRespawn
-        event['timestamp'] / 60000,                                 #secondsElapsed
-        event_objective_map[event['type']]                         #objective        
+        event['timestamp'] / 60000,                                 #secondsElapsed      
     )
-    
+
+    return vector
+
+
 def pick_team(match, team):
     participants = match['info']['participants']
     if team == 100:
@@ -252,13 +237,11 @@ def get_patch(match):
     version = match['info']['gameVersion']
     patch = version.split('.')
     
-    return ".".join(patch[0,2])
+    return ".".join(patch[0:2])
 
 def seconds_till(timestamp, now):
     till = (timestamp - now)/1000
     return till if till>0 else 0
 
-event_objective_map = {
-
-}
-   
+def is_valid_game():
+    pass
