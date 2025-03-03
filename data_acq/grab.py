@@ -2,6 +2,7 @@ import json
 import os
 import numpy as np
 import re
+import math
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -62,10 +63,9 @@ def damage_type_ratio(snapshot, team):
         return red_phys/red_magic
 
 
-
-############
-## EVENTS ##
-############
+##################
+##### STATS ######
+##################
 
 def blue_gold_from_kill(event, blue_killed):
 
@@ -78,11 +78,6 @@ def blue_gold_from_kill(event, blue_killed):
         gold_diff += (assist_pool)
     
     return gold_diff if blue_killed else -gold_diff
-
-
-##################
-##### STATS ######
-##################
 
 def get_gold_difference(snapshot, intra_minute, team):
     blue = sum([value['totalGold'] for value in list(snapshot.values())[:5]])
@@ -128,11 +123,11 @@ def till_thing(inter_minute, event, thing):
         return (till_allied_nt1, till_allied_nt2, till_enemy_nt1, till_enemy_nt2)
     
     if thing == "avg_allied_respawn":
-        avg = sum(inter_minute["allied_respawns"]) / 5
+        avg = sum(inter_minute["blue_respawns"]) / 5
         return seconds_till(avg, now)
     
-    elif thing == "avg_enemy_respawn":
-        avg = sum(inter_minute['enemy_respawns']) / 5
+    elif thing == "avg_aliied_respawn":
+        avg = sum(inter_minute['red_respawns']) / 5
         return seconds_till(avg, now)
     
     elif thing in ["baron_exp_at", "elder_exp_at"]:
@@ -155,6 +150,25 @@ def till_thing(inter_minute, event, thing):
         else:
             return seconds_till(timestamp,now)
         
+def get_death_timer(level, now):
+    level_to_base = {
+        1:10, 2:10, 3:12, 4:12, 5:14, 6:16, 7:20, 8:25, 9:28, 
+        10:32.5, 11:35, 12:37.5, 13:40, 14:42.5, 15:45, 16:47.5, 17:50, 18:52.5
+    }
+    base = level_to_base[level]
+    if now < 900000:
+        multiplier = 0
+    elif now < 1800000:
+        multiplier = math.ceil(2*((now/60000)-15))*.00425
+    elif now < 2700000:
+        multiplier =  12.5 + math.ceil(2*((now/60000)-30))*.003
+    else:
+        multiplier = 21.75 + math.ceil(2*((now/60000)-45))*.0145
+    multiplier = .5 if multiplier > .5 else multiplier
+    seconds = base + (base*multiplier)
+    
+    return seconds*60000
+        
 
 ###################
 ## MISCELLANEOUS ##
@@ -168,6 +182,7 @@ def create_dynamic_features(team, snapshot, event, inter_minute, intra_minute):
     vector = (
         damage_type_ratio(snapshot, team),                          #damageTypeRatio
         get_gold_difference(snapshot, intra_minute, team),          #goldDifference
+        #AM I ADDING KILL DIFF HERE?
         get_avg_level(snapshot, intra_minute, team),                #averageAllyLvl
         get_avg_level(snapshot, intra_minute, enemy_team),          #averageEnemyLvl 
         np.mean(inter_minute["allied_distance_fountain"]),          #averageAllyToFountain
@@ -245,3 +260,9 @@ def seconds_till(timestamp, now):
 
 def is_valid_game():
     pass
+
+def assign_teams(teamId):
+    team = teamId
+    enemy_team = 100 if teamId == 200 else 200
+    
+    return team, enemy_team

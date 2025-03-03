@@ -18,9 +18,8 @@ for rank in ["platinum", "emerald", "diamond", "master", "grandmaster", "challen
         player_dict[rank] = json.load(file)
 
 
-
 def write_row_vector(array, statics, team, snapshot, event, inter_minute, intra_minute, objective, rank, region):
-    row = gb.create_dynamic_features(team, snapshot, event, inter_minute, intra_minute) + statics[0:5] + tuple(objective) + statics[5:] + tuple(rank, region)
+    row = gb.create_dynamic_features(team, snapshot, event, inter_minute, intra_minute) + statics[0:5] + tuple(objective,team) + statics[5:] + tuple(rank, region)
     array.append(row)
     print(f"event written: {objective}")
 
@@ -34,31 +33,36 @@ def save_data(old_df, new_rows):
 
 
 def calc_match_stats(match_rows, match, timeline, rank, region):
-
+    blue_statics = (
+        gb.get_aggregate_cc_rating(match, 100),         #CCScore
+        gb.get_aggregate_cc_rating(match, 200),         #enemyCCScore
+        gb.team_is_squishy(match, 100),                 #isSquishy
+        gb.team_is_squishy(match, 200),                 #vsSquishy
+        1 if match['info']['teams'][0]['win'] else 0,   #won
+        match['metadata']['matchId'],                   #matchId
+        gb.get_patch(match)                             #patch
+    )
+    red_statics = (
+        gb.get_aggregate_cc_rating(match, 200),         #CCScore
+        gb.get_aggregate_cc_rating(match, 100),         #enemyCCScore
+        gb.team_is_squishy(match, 200),                 #isSquishy
+        gb.team_is_squishy(match, 100),                 #vsSquishy
+        0 if match['info']['teams'][0]['win'] else 1,   #won
+        match['metadata']['matchId'],                   #matchId
+        gb.get_patch(match)                             #patch
+    )
     frames = timeline['info']['frames']
     inter_minute = {
-        #static match variables
-        "blue_cc_rating": gb.get_aggregate_cc_rating(match, 100),
-        "red_cc_rating": gb.get_aggregate_cc_rating(match, 200),
-        "blue_is_squishy": gb.team_is_squishy(match, 100),
-        "red_is_squishy" : gb.team_is_squishy(match, 200),
-        "winner": 100 if match['info']['teams'][0]['win'] == True else 200, 
-        "matchId": match['metadata']['matchId'],
-        "patch" : gb.get_patch(match),
-
-        #dynamic match variables
         "blue_dragons": 0,
         "red_dragons": 0,
         "blue_grubs": 0,
         "red_grubs": 0,
-        "blue_top_turrets_taken": 0,
-        "red_top_turrets_taken": 0,
-        "blue_mid_turrets_taken": 0,
-        "red_mid_turrets_taken": 0,
-        "blue_bot_turrets_taken": 0,
-        "red_bot_turrets_taken": 0,
-        "blue_inhibitors_taken": 0,
-        "red_inhibitors_taken": 0,
+        "blue_top_turrets": 3,
+        "red_top_turrets": 3,
+        "blue_mid_turrets": 3,
+        "red_mid_turrets": 3,
+        "blue_bot_turrets": 3,
+        "red_bot_turrets": 3,
         "feats_of_strength": 0,
         "atakhan": 0,
         "has_soul": 0,   
@@ -67,15 +71,19 @@ def calc_match_stats(match_rows, match, timeline, rank, region):
         "baron_exp_at": 0,          # timestamp when runs out, negative if red team has
         "elder_exp_at": 0,          # timestamp when runs out, negative if red team has
 
-        "grubs_up_at": 360000,           ##############
+        "grubs_up_at": 360000,      ##############
         "herald_up_at": 960000,     
-        "baron_up_at": 1500000,           # Timestaps which can then be subtracted from timestamp of the event to calculate: objective_up_in (x seconds)
+        "baron_up_at": 1500000,     # Timestaps which can then be subtracted from timestamp of the event to calculate: objective_up_in (x seconds)
         "dragon_up_at": 300000,
         "elder_up_at": 0,           #############
 
         "blue_nexus_turrets_respawn": [0,0],   ### lists that hold respawn timestamps for nexus turrets
         "red_nexus_turrets_resawn": [0,0],
+        "blue_inhibs_respawn": [0,0,0],
+        "red_inhibs_respawn": [0,0,0],
 
+        "blue_levels": [1,1,1,1,1],
+        "red_levels" : [1,1,1,1,1],
         "blue_respawns": [0,0,0,0,0], ###### lists that will hold respawn timestamps used to calculate: average_team_respawn (x seconds)
         "red_respawns": [0,0,0,0,0],  ######
 
@@ -103,11 +111,9 @@ def calc_match_stats(match_rows, match, timeline, rank, region):
             red_dist.pop(0)
 
         intra_minute = {
-                "blue_kill_diff": 0,
-                "blue_gold_diff": 0,
-                "blue_lvl_ups": 0,
-                "red_lvl_ups": 0
-                }
+            "blue_kill_diff": 0,
+            "blue_gold_diff": 0,
+            }
         
         # loop through events in minute
         for event in events:
@@ -120,42 +126,53 @@ def calc_match_stats(match_rows, match, timeline, rank, region):
                 intra_minute["blue_gold_diff"] += gb.blue_gold_from_kill(event, blue_killed)
                 intra_minute["blue_kill_diff"] += 1 if blue_killed else -1
 
-                victim_index = event['victimId']-1 if blue_killed else event['victimId']-6
-                    
+                victim_index = event['victimId']-6 if blue_killed else event['victimId']-1
+                victim_level = (intra_minute["red_levels"][victim_index] if blue_killed 
+                                else intra_minute["blue_levels"][victim_index])
+                death_timer = gb.get_death_timer(victim_level, now)
+                if blue_killed:
+                    inter_minute['red_respawns'][victim_index] = death_timer + now
+                else:
+                    inter_minute['blue_respawns'][victim_index] = death_timer + now
 
             elif etype == "LEVEL_UP":
-                leveler = 100 if event["participantId"] < 6 else 200
-                if leveler == team:
-                    intra_minute["allied_lvl_ups"] += 1
+                blue_leveled = True if event["participantId"] < 6 else False
+                leveler_index = event["participantId"]-1 if blue_leveled else event["participantId"]-6
+                if blue_leveled:
+                    intra_minute["blue_levels"][leveler_index] += 1
                 else:
-                    intra_minute["enemy_lvl_ups"] += 1
+                    intra_minute["red_levels"][leveler_index] += 1
 
 
             # Objective events where row writes occur
 
             elif etype == "ELITE_MONSTER_KILL":
                 if event['monsterType'] == "HORDE":
+                    team, enemy_team = gb.assign_teams(event["killerTeamId"])
+                    if team == 300:
+                        continue
+                    statics = blue_statics if team == 100 else red_statics
                     write_row_vector(match_rows, statics, team, snapshot, event, inter_minute, intra_minute, 'grub', rank, region)
 
-                    if event['killerTeamId'] == team:
-                        inter_minute['allied_grubs'] += 1
-                    elif event['killerTeamId'] == enemy_team:
-                        inter_minute['enemy_grubs'] += 1
+                    if team == 100:
+                        inter_minute['blue_grubs'] += 1
+                    else:
+                        inter_minute['red_grubs'] += 1
 
-                    c1 = inter_minute['allied_grubs'] + inter_minute['enemy_grubs'] == 3
+                    c1 = inter_minute['red_grubs'] + inter_minute['blue_grubs'] == 3
                     c2 = now < 705000
                     if c1 and c2:
                         inter_minute["grubs_up_at"] = now + 240000
 
 
                 elif event['monsterType'] == "DRAGON":
-            
+                    team, enemy_team = gb.assign_teams(event['killerTeamId'])
                     if event["monsterSubType"] != "ELDER_DRAGON":
                         write_row_vector(match_rows, statics, team, snapshot, event, inter_minute, intra_minute, event["monsterSubType"], rank, region)
-                        if event['killerTeamId'] == team:
-                            inter_minute['allied_dragons'] += 1
+                        if team == 100:
+                            inter_minute['blue_dragons'] += 1
                         else:
-                            inter_minute['enemy_dragons'] += 1
+                            inter_minute['red_dragons'] += 1
 
 
                         if inter_minute['allied_dragons'] == 4:
