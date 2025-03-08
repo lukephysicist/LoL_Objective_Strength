@@ -64,6 +64,7 @@ Steps:
         - Atahkan
         - Any Tower
         - Any Inhib
+        - FeatsofStrength
         
     Timestamps:
         First dragon: 5 min 
