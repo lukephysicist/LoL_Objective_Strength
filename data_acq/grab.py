@@ -83,19 +83,16 @@ def get_gold_difference(snapshot, intra_minute, team):
     blue = sum([value['totalGold'] for value in list(snapshot.values())[:5]])
     red = sum([value['totalGold'] for value in list(snapshot.values())[5:]])
 
-    difference = blue - red + intra_minute['gold_diff'] if team == 100 else red - blue + intra_minute['gold_diff']
+    difference = blue - red + intra_minute['blue_gold_diff'] if team == 100 else red - blue - intra_minute['blue_gold_diff']
 
     return difference
 
-def get_avg_level(snapshot, intra_minute, team):
+def get_avg_level(inter_minute, team):
     if team == 100:
-        aggregate = sum([value['level'] for value in list(snapshot.values())[:5]]) 
-        aggregate += intra_minute['allied_lvl_ups']
+        return np.mean(inter_minute['blue_levels'])
     else:
-        aggregate = sum([value['level'] for value in list(snapshot.values())[5:]]) 
-        aggregate += intra_minute['enemy_lvl_ups']
-    return aggregate / 5
-    
+        return np.mean(inter_minute['red_levels'])
+
 
 def avg_distance_to_fountain(snapshot):
     positions = np.array([list(p['position'].values()) for p in snapshot.values()])
@@ -109,30 +106,51 @@ def avg_distance_to_fountain(snapshot):
     return (np.mean(blue_distances), np.mean(red_distances))
 
 
-def till_thing(inter_minute, event, thing):
+def till_thing(inter_minute, event, thing, team=100):
     now = event['timestamp']
     if thing == "nt":
-        allied_nt1_respawn, allied_nt2_respawn = inter_minute['nexus_turrets_respawn']
-        enemy_nt1_respawn, enemy_nt2_respawn = inter_minute['enemy_nexus_turrets_respawn']
+        blue_nt1_respawn, blue_nt2_respawn = inter_minute['blue_nexus_turrets_respawn']
+        red_nt1_respawn, red_nt2_respawn = inter_minute['red_nexus_turrets_respawn']
 
-        till_allied_nt1 = seconds_till(allied_nt1_respawn, now)
-        till_allied_nt2 = seconds_till(allied_nt2_respawn, now)
-        till_enemy_nt1 = seconds_till(enemy_nt1_respawn, now)
-        till_enemy_nt2 = seconds_till(enemy_nt2_respawn, now)
+        till_blue_nt1 = seconds_till(blue_nt1_respawn, now)
+        till_blue_nt2 = seconds_till(blue_nt2_respawn, now)
+        till_red_nt1 = seconds_till(red_nt1_respawn, now)
+        till_red_nt2 = seconds_till(red_nt2_respawn, now)
 
-        return (till_allied_nt1, till_allied_nt2, till_enemy_nt1, till_enemy_nt2)
+        if team == 100:
+            return (till_blue_nt1, till_blue_nt2, till_red_nt1, till_red_nt2)
+        else:
+            return (till_red_nt1, till_red_nt2, till_blue_nt1, till_blue_nt2)
+    
+    if thing == 'inhibs':
+        blue_inhib1, blue_inhib2, blue_inhib3 = inter_minute["blue_inhibs_respawn"]
+        red_inhib1, red_inhib2, red_inhib3 = inter_minute["red_inhibs_respawn"]
+
+        if team == 100:
+            return (seconds_till(blue_inhib1, now), seconds_till(blue_inhib2, now), seconds_till(blue_inhib3, now))
+        else:
+            return (seconds_till(red_inhib1, now), seconds_till(red_inhib2, now), seconds_till(red_inhib3, now))
+
     
     if thing == "avg_allied_respawn":
-        avg = sum(inter_minute["blue_respawns"]) / 5
-        return seconds_till(avg, now)
+        if team == 100:
+            avg = sum(inter_minute["blue_respawns"]) / 5
+            return seconds_till(avg, now)
+        else:
+            avg = sum(inter_minute["red_respawns"]) / 5
+            return seconds_till(avg, now)
     
-    elif thing == "avg_aliied_respawn":
-        avg = sum(inter_minute['red_respawns']) / 5
-        return seconds_till(avg, now)
+    elif thing == "avg_enemy_respawn":
+        if team == 100:
+            avg = sum(inter_minute['red_respawns']) / 5
+            return seconds_till(avg, now)
+        else:
+            avg = sum(inter_minute['blue_respawns']) / 5
+            return seconds_till(avg, now)
     
     elif thing in ["baron_exp_at", "elder_exp_at"]:
         timestamp = inter_minute[thing]
-        enemy_has = True if timestamp < 0 else False
+        enemy_has = ((team == 100 and timestamp<0) or (not team == 100 and timestamp>0))
         timestamp = abs(timestamp)
        
         if enemy_has:
@@ -140,15 +158,10 @@ def till_thing(inter_minute, event, thing):
         else:
             return seconds_till(timestamp, now) 
     
+    # this is for obj_up_at
     else:
         timestamp = inter_minute[f'{thing}']
-        enemy_has = True if timestamp < 0 else False
-        
-        timestamp = abs(timestamp)
-        if enemy_has:
-            return -seconds_till(timestamp, now)
-        else:
-            return seconds_till(timestamp,now)
+        return seconds_till(timestamp,now)
         
 def get_death_timer(level, now):
     level_to_base = {
@@ -170,53 +183,83 @@ def get_death_timer(level, now):
     return seconds*60000
         
 
+def inter_minute_grabber(inter_minute, team, thing):
+    if thing == "distance_fountain":
+        if team == 100:
+            return np.mean(inter_minute[f'blue_{thing}'])
+        else:
+            return np.mean(inter_minute[f'red_{thing}'])
+        
+    elif thing in ["feats_of_strength", "atakhan", "has_soul", "killed_herald"]:
+        if inter_minute[thing] == 0:
+            return 0
+        elif inter_minute[thing] == team:
+            return 1
+        else:
+            return -1
+        
+    else:
+        if team == 100:
+            return inter_minute[f'blue_{thing}']
+        else:
+            return inter_minute[f'red_{thing}']
+
+
 ###################
 ## MISCELLANEOUS ##
 ###################
 
 
 def create_dynamic_features(team, snapshot, event, inter_minute, intra_minute):
-    enemy_team = 100 if (team == 200) else 100
+    team, enemy_team = assign_teams(team)
     till_allied_nt1, till_allied_nt2, till_enemy_nt1, till_enemy_nt2 = till_thing(inter_minute, event, 'nt')
+    till_allied_inhib1, till_allied_inhib2, till_allied_inhib3 = till_thing(inter_minute, event, 'inhibs', team)
+    till_enemy_inhib1, till_enemy_inhib2, till_enemy_inhib3 = till_thing(inter_minute, event, 'inhibs', enemy_team)
 
+    
     vector = (
-        damage_type_ratio(snapshot, team),                          #damageTypeRatio
-        get_gold_difference(snapshot, intra_minute, team),          #goldDifference
+        damage_type_ratio(snapshot, team),                                                  #damageTypeRatio
+        get_gold_difference(snapshot, intra_minute, team),                                  #goldDifference
         #AM I ADDING KILL DIFF HERE?
-        get_avg_level(snapshot, intra_minute, team),                #averageAllyLvl
-        get_avg_level(snapshot, intra_minute, enemy_team),          #averageEnemyLvl 
-        np.mean(inter_minute["allied_distance_fountain"]),          #averageAllyToFountain
-        np.mean(inter_minute['enemy_distance_fountain']),           #averageEnemytoFountain
-        inter_minute['allied_dragons'],                             #alliedDragons
-        inter_minute['enemy_dragons'],                              #enemyDragons
-        inter_minute['allied_grubs'],                               #alliedGrubs
-        inter_minute['enemy_grubs'],                                #enemyGrubs
-        inter_minute['top_turrets_taken'],                          #topTurrets
-        inter_minute["enemy_top_turrets_taken"],                    #enemytopTurrets
-        inter_minute['mid_turrets_taken'],                          #midTurrets
-        inter_minute['enemy_mid_turrets_taken'],                    #enemyMidTurrets
-        inter_minute['bot_turrets_taken'],                          #botTurrets
-        inter_minute['enemy_bot_turrets_taken'],                    #enemyBotTurrets
-        inter_minute["inhibitors_taken"],                           #inhibsTaken
-        inter_minute['enemy_inhibitors_taken'],                     #enemyInhibsTaken
-        till_allied_nt1,                                            #tillAlliedNT1
-        till_allied_nt2,                                            #tillAlliedNT2
-        till_enemy_nt1,                                             #tillEnemyNT1
-        till_enemy_nt2,                                             #tillEnemyNT2
-        inter_minute['feats_of_strength'],                          #featsOfStrength
-        inter_minute['atakhan'],                                    #atakhan
-        inter_minute['has_soul'],                                   #hasSoul
-        inter_minute['killed_herald'],                              #killedHerald       
-        till_thing(inter_minute, event, "baron_exp_at"),            #untilBaronExp
-        till_thing(inter_minute, event, "elder_exp_at"),            #untilElderExp
-        till_thing(inter_minute, event, "grubs_up_at"),             #untilGrubsSpawn
-        till_thing(inter_minute, event, "herald_up_at"),            #untilHeraldSpawn
-        till_thing(inter_minute, event, "baron_up_at"),             #untilBaronSpawn
-        till_thing(inter_minute, event, "dragon_up_at"),            #untilDragonSpawn
-        till_thing(inter_minute, event, "elder_up_at"),             #untilElderSpawn
-        till_thing(inter_minute, event, "avg_allied_respawn"),      #avgAlliedRespawn
-        till_thing(inter_minute, event, "avg_enemy_respawn"),       #avgEnemyRespawn
-        event['timestamp'] / 60000,                                 #secondsElapsed      
+        get_avg_level(inter_minute, team),                                                  #averageAllyLvl
+        get_avg_level(inter_minute, enemy_team),                                            #averageEnemyLvl 
+        inter_minute_grabber(inter_minute, team, 'distance_fountain'),                      #averageAllyToFountain
+        inter_minute_grabber(inter_minute, enemy_team, 'distance_fountain'),                #averageEnemytoFountain
+        inter_minute_grabber(inter_minute, team, 'dragons'),                                #alliedDragons
+        inter_minute_grabber(inter_minute, enemy_team, 'dragons'),                          #enemyDragons
+        inter_minute_grabber(inter_minute, team, 'grubs'),                                  #alliedGrubs
+        inter_minute_grabber(inter_minute, enemy_team, 'grubs'),                            #enemyGrubs
+        inter_minute_grabber(inter_minute, team, 'top_turrets'),                            #topTurrets
+        inter_minute_grabber(inter_minute, enemy_team, 'top_turrets'),                      #enemytopTurrets
+        inter_minute_grabber(inter_minute, team, 'mid_turrets'),                            #midTurrets
+        inter_minute_grabber(inter_minute, enemy_team, 'mid_turrets'),                      #enemyMidTurrets
+        inter_minute_grabber(inter_minute, team, 'bot_turrets'),                            #botTurrets
+        inter_minute_grabber(inter_minute, enemy_team, 'bot_turrets'),                      #enemyBotTurrets
+        till_allied_nt1,                                                                    #tillAlliedNT1
+        till_allied_nt2,                                                                    #tillAlliedNT2
+        till_enemy_nt1,                                                                     #tillEnemyNT1
+        till_enemy_nt2,                                                                     #tillEnemyNT2
+        till_allied_inhib1,                                                                 #tillAliledInhib1
+        till_allied_inhib2,                                                                 #tillAliledInhib1
+        till_allied_inhib3,                                                                 #tillAliledInhib2
+        till_enemy_inhib1,                                                                  #tillEnemeyInhib1
+        till_enemy_inhib2,                                                                  #tillEnemeyInhib2
+        till_enemy_inhib3,                                                                  #tillEnemeyInhib3
+        inter_minute_grabber(inter_minute, team, 'feats_of_strength'),                      #featsOfStrength
+        inter_minute_grabber(inter_minute, team, 'atakhan'),                                #atakhan
+        inter_minute_grabber(inter_minute, team, 'has_soul'),                               #hasSoul
+        inter_minute_grabber(inter_minute, team, 'killed_herald'),                          #killedHerald
+        inter_minute['soul_type'],                                                          #soulType
+        till_thing(inter_minute, event, "baron_exp_at", team),                              #untilBaronExp
+        till_thing(inter_minute, event, "elder_exp_at", team),                              #untilElderExp
+        till_thing(inter_minute, event, "grubs_up_at"),                                     #untilGrubsSpawn
+        till_thing(inter_minute, event, "herald_up_at"),                                    #untilHeraldSpawn
+        till_thing(inter_minute, event, "baron_up_at"),                                     #untilBaronSpawn
+        till_thing(inter_minute, event, "dragon_up_at"),                                    #untilDragonSpawn
+        till_thing(inter_minute, event, "elder_up_at"),                                     #untilElderSpawn
+        till_thing(inter_minute, event, "avg_allied_respawn", team),                        #avgAlliedRespawn
+        till_thing(inter_minute, event, "avg_enemy_respawn", enemy_team),                   #avgEnemyRespawn
+        event['timestamp'] / 60000,                                                         #secondsElapsed      
     )
 
     return vector

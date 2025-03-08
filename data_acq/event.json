@@ -1,0 +1,16 @@
+{
+    "assistingParticipantIds": [
+        8
+    ],
+    "bounty": 0,
+    "killerId": 7,
+    "killerTeamId": 200,
+    "monsterSubType": "EARTH_DRAGON",
+    "monsterType": "DRAGON",
+    "position": {
+        "x": 9837,
+        "y": 4397
+    },
+    "timestamp": 545951,
+    "type": "ELITE_MONSTER_KILL"
+}

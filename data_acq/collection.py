@@ -19,7 +19,7 @@ for rank in ["platinum", "emerald", "diamond", "master", "grandmaster", "challen
 
 
 def write_row_vector(array, statics, team, snapshot, event, inter_minute, intra_minute, objective, rank, region):
-    row = gb.create_dynamic_features(team, snapshot, event, inter_minute, intra_minute) + statics[0:5] + tuple(objective,team) + statics[5:] + tuple(rank, region)
+    row = gb.create_dynamic_features(snapshot, event, inter_minute, intra_minute) + statics[0:5] + tuple([objective,team]) + statics[5:] + tuple([rank, region])
     array.append(row)
     print(f"event written: {objective}")
 
@@ -76,9 +76,10 @@ def calc_match_stats(match_rows, match, timeline, rank, region):
         "baron_up_at": 1500000,     # Timestaps which can then be subtracted from timestamp of the event to calculate: objective_up_in (x seconds)
         "dragon_up_at": 300000,
         "elder_up_at": 0,           #############
+        "soul_type": "",
 
         "blue_nexus_turrets_respawn": [0,0],   ### lists that hold respawn timestamps for nexus turrets
-        "red_nexus_turrets_resawn": [0,0],
+        "red_nexus_turrets_respawn": [0,0],
         "blue_inhibs_respawn": [0,0,0],
         "red_inhibs_respawn": [0,0,0],
 
@@ -148,7 +149,7 @@ def calc_match_stats(match_rows, match, timeline, rank, region):
 
             elif etype == "ELITE_MONSTER_KILL":
                 if event['monsterType'] == "HORDE":
-                    team, enemy_team = gb.assign_teams(event["killerTeamId"])
+                    team = event["killerTeamId"]
                     if team == 300:
                         continue
                     statics = blue_statics if team == 100 else red_statics
@@ -166,55 +167,70 @@ def calc_match_stats(match_rows, match, timeline, rank, region):
 
 
                 elif event['monsterType'] == "DRAGON":
-                    team, enemy_team = gb.assign_teams(event['killerTeamId'])
+                    team = event['killerTeamId']
+                    team_name = "blue" if team == 100 else "red"
                     if event["monsterSubType"] != "ELDER_DRAGON":
-                        write_row_vector(match_rows, statics, team, snapshot, event, inter_minute, intra_minute, event["monsterSubType"], rank, region)
+                        gaining_soul = inter_minute[f'{team_name}_dragons'] == 3
+                        if gaining_soul:
+                            etype = f'{inter_minute['soul_type']}_dragon_soul'
+                        else: etype = event['monsterSubType']
+                        statics = blue_statics if team == 100 else red_statics
+                        write_row_vector(match_rows, statics, team, snapshot, event, inter_minute, intra_minute, etype, rank, region)
+                        
                         if team == 100:
                             inter_minute['blue_dragons'] += 1
                         else:
                             inter_minute['red_dragons'] += 1
 
 
-                        if inter_minute['allied_dragons'] == 4:
-                            inter_minute['has_soul'] = 1
+                        if inter_minute['blue_dragons'] == 4:
+                            inter_minute['has_soul'] = 100
 
-                        elif inter_minute['enemy_dragons'] == 4:
-                            inter_minute["has_soul"] = -1
+                        elif inter_minute['red_dragons'] == 4:
+                            inter_minute["has_soul"] = 200
                             
                     
-                        if inter_minute['has_soul'] != 0: 
+                        if inter_minute['has_soul'] == 0: 
                             inter_minute["dragon_up_at"] = now + 300000
                         else:
                             inter_minute["elder_up_at"] = now + 360000
                     
                     else:
+                        statics = blue_statics if team == 100 else red_statics
                         write_row_vector(match_rows, statics, team, snapshot, event, inter_minute, intra_minute, 'elder', rank, region)
-                        if event['killerTeamId'] == team:
+                        if team == 100:
                             inter_minute["elder_exp_at"] = now + 150000
-
-                        elif event['killerTeamId'] == enemy_team:
-                            inter_minute['killerTeamId'] = -(now+150000)
+                        else:
+                            inter_minute['elder_exp_at'] = -(now+150000)
                     
-
 
                 elif event['monsterType'] == "ATAKHAN":
+                    team = event["killerTeamId"]
                     write_row_vector(match_rows, statics, team, snapshot, event, inter_minute, intra_minute, 'atakhan', rank, region)
 
-                    if event['killerTeamId'] == team:
-                        inter_minute['atakhan'] = 1
+                    if team == 100:
+                        inter_minute['atakhan'] = 100
                     else:
-                        inter_minute['atakhan'] = -1
+                        inter_minute['atakhan'] = 200
+
 
                 elif event['monsterType'] == "RIFTHERALD":
+                    team = event["killerTeamId"]
+                    if team == 300:
+                        continue
                     write_row_vector(match_rows, statics, team, snapshot, event, inter_minute, intra_minute, 'riftHerald', rank, region)
                     
-                    if event['killerTeamId'] == team:
-                        inter_minute['killed_herald'] = 1
-                    elif event['killerTeamId'] == enemy_team:
-                        inter_minute['killed_herald'] = -1
+                    if team == 100:
+                        inter_minute['killed_herald'] = 100
+                    else:
+                        inter_minute['killed_herald'] = 200
 
 
             elif etype == "DRAGON_SOUL_GIVEN":
+                if event['teamId'] == 0:
+                    inter_minute["soul_type"] = event['name']
+        
+
                 
                     
 
