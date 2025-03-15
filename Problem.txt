@@ -76,6 +76,8 @@ Steps:
         next baron: 6 min after
         atakhan: 20 min
         Elder: 6 min after soul (and  6 min after elder) (2.5 min buff)
+        Inhib Respawn: 5 minutes after destruction
+        Nexus Turret Respawn: 3 minutes after destruction
        
 
 2. Create a user interface that allows a user to filter through different game states, calculating the win probability added for each objective on request. 

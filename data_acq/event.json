@@ -1,16 +1,14 @@
 {
-    "assistingParticipantIds": [
-        8
-    ],
     "bounty": 0,
-    "killerId": 7,
-    "killerTeamId": 200,
-    "monsterSubType": "EARTH_DRAGON",
-    "monsterType": "DRAGON",
+    "buildingType": "TOWER_BUILDING",
+    "killerId": 0,
+    "laneType": "MID_LANE",
     "position": {
-        "x": 9837,
-        "y": 4397
+        "x": 12611,
+        "y": 13084
     },
-    "timestamp": 545951,
-    "type": "ELITE_MONSTER_KILL"
+    "teamId": 200,
+    "timestamp": 2873120,
+    "towerType": "NEXUS_TURRET",
+    "type": "BUILDING_KILL"
 }

@@ -71,11 +71,12 @@ def blue_gold_from_kill(event, blue_killed):
 
     gold_diff = event["bounty"] + event["shutdownBounty"]
     assist_pool = (.7*event["bounty"]) + (.28*event["shutdownBounty"])
-    n_assistants = len(event['assistingParticipantIds'])
-    if (assist_pool/n_assistants) > 150:
-        gold_diff += (n_assistants*150)
-    else:
-        gold_diff += (assist_pool)
+    n_assistants = len(event.get("assistingParticipantIds", []))
+    if n_assistants != 0:
+        if (assist_pool/n_assistants) > 150:
+            gold_diff += (n_assistants*150)
+        else:
+            gold_diff += (assist_pool)
     
     return gold_diff if blue_killed else -gold_diff
 
@@ -163,6 +164,7 @@ def till_thing(inter_minute, event, thing, team=100):
         timestamp = inter_minute[f'{thing}']
         return seconds_till(timestamp,now)
         
+
 def get_death_timer(level, now):
     level_to_base = {
         1:10, 2:10, 3:12, 4:12, 5:14, 6:16, 7:20, 8:25, 9:28, 
@@ -212,7 +214,7 @@ def inter_minute_grabber(inter_minute, team, thing):
 
 def create_dynamic_features(team, snapshot, event, inter_minute, intra_minute):
     team, enemy_team = assign_teams(team)
-    till_allied_nt1, till_allied_nt2, till_enemy_nt1, till_enemy_nt2 = till_thing(inter_minute, event, 'nt')
+    till_allied_nt1, till_allied_nt2, till_enemy_nt1, till_enemy_nt2 = till_thing(inter_minute, event, 'nt', team)
     till_allied_inhib1, till_allied_inhib2, till_allied_inhib3 = till_thing(inter_minute, event, 'inhibs', team)
     till_enemy_inhib1, till_enemy_inhib2, till_enemy_inhib3 = till_thing(inter_minute, event, 'inhibs', enemy_team)
 
@@ -220,7 +222,6 @@ def create_dynamic_features(team, snapshot, event, inter_minute, intra_minute):
     vector = (
         damage_type_ratio(snapshot, team),                                                  #damageTypeRatio
         get_gold_difference(snapshot, intra_minute, team),                                  #goldDifference
-        #AM I ADDING KILL DIFF HERE?
         get_avg_level(inter_minute, team),                                                  #averageAllyLvl
         get_avg_level(inter_minute, enemy_team),                                            #averageEnemyLvl 
         inter_minute_grabber(inter_minute, team, 'distance_fountain'),                      #averageAllyToFountain
@@ -258,8 +259,8 @@ def create_dynamic_features(team, snapshot, event, inter_minute, intra_minute):
         till_thing(inter_minute, event, "dragon_up_at"),                                    #untilDragonSpawn
         till_thing(inter_minute, event, "elder_up_at"),                                     #untilElderSpawn
         till_thing(inter_minute, event, "avg_allied_respawn", team),                        #avgAlliedRespawn
-        till_thing(inter_minute, event, "avg_enemy_respawn", enemy_team),                   #avgEnemyRespawn
-        event['timestamp'] / 60000,                                                         #secondsElapsed      
+        till_thing(inter_minute, event, "avg_enemy_respawn", team),                         #avgEnemyRespawn
+        event['timestamp'] / 60000,                                                         #minutesElapsed      
     )
 
     return vector
@@ -301,11 +302,37 @@ def seconds_till(timestamp, now):
     till = (timestamp - now)/1000
     return till if till>0 else 0
 
-def is_valid_game():
-    pass
+# Match is valid if: 1. played on min_patch or more recent 2. is a solo/duo ranked game 
+# 3. Was not surrendered before 3 minutes
+def is_valid_game(match, min_patch):
+    if match['info']['queueId'] != 420:
+        return False
+    patch = get_patch(match)
+
+    patch1, patch2 = patch.split(".")
+    min_patch1, min_patch2 = min_patch.split(".")
+    if int(min_patch1) > int(patch1):
+        return False
+    elif int(min_patch1) == int(patch1):
+        if int(min_patch2) > int(patch2):
+            return False
+        
+    if match['info']["gameDuration"] < 180:
+        return False
+    
+    return True
 
 def assign_teams(teamId):
     team = teamId
     enemy_team = 100 if teamId == 200 else 200
     
     return team, enemy_team
+
+tower_tier_mapper = {"OUTER_TURRET": 'T1',
+                     "INNER_TURRET": 'T2',
+                     "BASE_TURRET": 'T3',
+                     "NEXUS_TURRET": 'nexus'}
+
+lane_mapper = {"TOP_LANE": "top",
+                "MID_LANE": "mid",
+                "BOT_LANE": "bot"}
