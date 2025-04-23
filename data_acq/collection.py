@@ -10,6 +10,10 @@ load_dotenv()
 API_KEY = os.getenv("RIOTAPI")
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
+################################
+## WORKS FOR PATCH 15.2 OR NEWER
+################################
+
 df = pd.read_parquet(f"{script_dir}/objective_data.parquet")         
 
 player_dict = {}
@@ -21,7 +25,7 @@ for rank in ["platinum", "emerald", "diamond", "master", "grandmaster", "challen
 def write_row_vector(array, statics, team, snapshot, event, inter_minute, intra_minute, objective, rank, region):
     row = gb.create_dynamic_features(team, snapshot, event, inter_minute, intra_minute) + statics[0:5] + tuple([objective,team]) + statics[5:] + tuple([rank, region])
     array.append(row)
-    print(f"event written: {objective}")
+    
 
 
 def save_data(old_df, new_rows):
@@ -67,6 +71,7 @@ def calc_match_stats(match_rows, match, timeline, rank, region):
         "atakhan": 0,
         "has_soul": 0,   
         "killed_herald": 0,
+        "herald_deployed": 0,
 
         "baron_exp_at": 0,          # timestamp when runs out, negative if red team has
         "elder_exp_at": 0,          # timestamp when runs out, negative if red team has
@@ -75,7 +80,7 @@ def calc_match_stats(match_rows, match, timeline, rank, region):
         "herald_up_at": 960000,     
         "baron_up_at": 1500000,     # Timestaps which can then be subtracted from timestamp of the event to calculate: objective_up_in (x seconds)
         "dragon_up_at": 300000,
-        "elder_up_at": 0,           #############
+        "elder_up_at": -1,           #############
         "soul_type": "Unknown",
 
         "blue_nexus_turrets_respawn": [0,0],   ### lists that hold respawn timestamps for nexus turrets
@@ -90,6 +95,17 @@ def calc_match_stats(match_rows, match, timeline, rank, region):
 
         "blue_distance_fountain" : [],
         "red_distance_fountain" : []
+    }
+    feats_tracker = {
+        "red_epic_kills": 0, 
+        "blue_epic_kills": 0,
+        "red_champ_kills": 0,
+        "blue_champ_kills": 0,
+        "blue_grub_batch_kills": 0,
+
+        "fos_first_tower": 0,
+        "fos_objectives": 0,  
+        "fos_kills": 0,       
     }
     prev_snapshot = frames[0]['participantFrames']
 
@@ -120,8 +136,9 @@ def calc_match_stats(match_rows, match, timeline, rank, region):
         for event in events:
             now = event['timestamp']
             etype = event['type']
-            
-            # updating gold, kills, levels
+                
+
+        # updating gold, kills, levels
             if etype == "CHAMPION_KILL":
                 blue_killed = True if event['killerId'] < 6 else False
                 intra_minute["blue_gold_diff"] += gb.blue_gold_from_kill(event, blue_killed)
@@ -133,8 +150,10 @@ def calc_match_stats(match_rows, match, timeline, rank, region):
                 death_timer = gb.get_death_timer(victim_level, now)
                 if blue_killed:
                     inter_minute['red_respawns'][victim_index] = death_timer + now
+                    feats_tracker['blue_champ_kills'] += 1
                 else:
                     inter_minute['blue_respawns'][victim_index] = death_timer + now
+                    feats_tracker['red_champ_kills'] += 1
 
             elif etype == "LEVEL_UP":
                 blue_leveled = True if event["participantId"] < 6 else False
@@ -145,9 +164,9 @@ def calc_match_stats(match_rows, match, timeline, rank, region):
                     inter_minute["red_levels"][leveler_index] += 1
 
 
-            # Objective events where row writes occur
-
+        # Objective events where row writes occur
             elif etype == "ELITE_MONSTER_KILL":
+
                 if event['monsterType'] == "HORDE":
                     team = event["killerTeamId"]
                     if team == 300:
@@ -157,13 +176,25 @@ def calc_match_stats(match_rows, match, timeline, rank, region):
 
                     if team == 100:
                         inter_minute['blue_grubs'] += 1
+                        feats_tracker['blue_grub_batch_kills'] += 1
                     else:
                         inter_minute['red_grubs'] += 1
+                        feats_tracker['blue_grub_batch_kills'] -= 1
 
-                    c1 = inter_minute['red_grubs'] + inter_minute['blue_grubs'] == 3
-                    c2 = now < 705000
-                    if c1 and c2:
-                        inter_minute["grubs_up_at"] = now + 240000
+                    camp_cleared = (inter_minute['red_grubs'] + inter_minute['blue_grubs']) % 3 == 0
+                    before_respawn_limit = now < 705000
+                    if camp_cleared:
+                        if before_respawn_limit and inter_minute['red_grubs'] + inter_minute['blue_grubs'] <= 3:
+                            inter_minute["grubs_up_at"] = now + 240000
+                        else:
+                            inter_minute['grubs_up_at'] = -1
+
+                        if feats_tracker['blue_grub_batch_kills'] == 3:
+                            feats_tracker['blue_epic_kills'] += 1
+                        elif feats_tracker['blue_grub_batch_kills'] == -3:
+                            feats_tracker['red_epic_kills'] += 1
+                        feats_tracker['blue_grub_batch_kills'] = 0
+
 
 
                 elif event['monsterType'] == "DRAGON":
@@ -173,35 +204,40 @@ def calc_match_stats(match_rows, match, timeline, rank, region):
                         gaining_soul = inter_minute[f'{team_name}_dragons'] == 3
                         if gaining_soul:
                             etype = f'{inter_minute['soul_type']}_dragon_soul'
-                        else: etype = event['monsterSubType']
+                        else: 
+                            etype = event['monsterSubType']
                         statics = blue_statics if team == 100 else red_statics
                         write_row_vector(match_rows, statics, team, snapshot, event, inter_minute, intra_minute, etype, rank, region)
                         
                         if team == 100:
                             inter_minute['blue_dragons'] += 1
+                            feats_tracker['blue_epic_kills'] += 1
                         else:
                             inter_minute['red_dragons'] += 1
+                            feats_tracker['red_epic_kills'] += 1
 
 
                         if inter_minute['blue_dragons'] == 4:
                             inter_minute['has_soul'] = 100
+                            inter_minute['dragon_up_at'] = -1
+                            inter_minute['elder_up_at'] = now + 360000
 
                         elif inter_minute['red_dragons'] == 4:
                             inter_minute["has_soul"] = 200
-                            
-                    
-                        if inter_minute['has_soul'] == 0: 
-                            inter_minute["dragon_up_at"] = now + 300000
+                            inter_minute["dragon_up_at"] = -1
+                            inter_minute['elder_up_at'] = now + 360000
                         else:
-                            inter_minute["elder_up_at"] = now + 360000
+                            inter_minute['dragon_up_at'] = now + 300000
                     
                     else:
                         statics = blue_statics if team == 100 else red_statics
                         write_row_vector(match_rows, statics, team, snapshot, event, inter_minute, intra_minute, 'elder', rank, region)
                         if team == 100:
                             inter_minute["elder_exp_at"] = now + 150000
+                            feats_tracker['blue_epic_kills'] += 1
                         else:
                             inter_minute['elder_exp_at'] = -(now+150000)
+                            feats_tracker['red_epic_kills'] += 1
 
                         inter_minute["elder_up_at"] = now + 360000
                         
@@ -214,8 +250,10 @@ def calc_match_stats(match_rows, match, timeline, rank, region):
 
                     if team == 100:
                         inter_minute['atakhan'] = 100
+                        feats_tracker['blue_epic_kills'] += 1
                     else:
                         inter_minute['atakhan'] = 200
+                        feats_tracker['red_epic_kills'] += 1
 
 
                 elif event['monsterType'] == "RIFTHERALD":
@@ -224,11 +262,15 @@ def calc_match_stats(match_rows, match, timeline, rank, region):
                         continue
                     statics = blue_statics if team == 100 else red_statics
                     write_row_vector(match_rows, statics, team, snapshot, event, inter_minute, intra_minute, 'riftHerald', rank, region)
-                    
                     if team == 100:
                         inter_minute['killed_herald'] = 100
+                        intra_minute['blue_gold_diff'] += 200
+                        feats_tracker['blue_epic_kills'] += 1
                     else:
                         inter_minute['killed_herald'] = 200
+                        intra_minute['blue_gold_diff'] -= 200
+                        feats_tracker['red_epic_kills'] += 1
+                    inter_minute['herald_up_at'] = -1
 
 
                 elif event['monsterType'] == "BARON_NASHOR":
@@ -238,6 +280,13 @@ def calc_match_stats(match_rows, match, timeline, rank, region):
 
                     exp_timestamp = now + 180000
                     inter_minute['baron_exp_at'] = exp_timestamp if team == 100 else -exp_timestamp
+
+                    if team == 100:
+                        intra_minute['blue_gold_diff'] += 1500
+                        feats_tracker['blue_epic_kills'] += 1
+                    else:
+                        intra_minute['blue_gold_diff'] -= 1500
+                        feats_tracker['red_epic_kills'] += 1
                     inter_minute['baron_up_at'] = now + 360000
 
 
@@ -249,9 +298,11 @@ def calc_match_stats(match_rows, match, timeline, rank, region):
 
             elif etype == "BUILDING_KILL":
                 killer_team = 100 if event["teamId"] == 200 else 200
-                killed_team_name = "blue" if killer_team == 100 else "red"
+                killed_team_name = "blue" if killer_team == 200 else "red"
                 statics = blue_statics if killer_team == 100 else red_statics
                 if event["buildingType"] == "TOWER_BUILDING":
+                    if feats_tracker['fos_first_tower'] == 0:
+                        feats_tracker['fos_first_tower'] = killer_team
                     lane = gb.lane_mapper[event['laneType']]
                     tier = gb.tower_tier_mapper[event['towerType']]
 
@@ -259,6 +310,21 @@ def calc_match_stats(match_rows, match, timeline, rank, region):
                         objective = "".join([lane,tier])
                         write_row_vector(match_rows, statics, killer_team, snapshot, event, inter_minute, intra_minute, objective, rank, region)
                         inter_minute[f"{killed_team_name}_{lane}_turrets"] -= 1
+                        if tier == "T1":
+                            if killer_team == 100:
+                                intra_minute['blue_gold_diff'] += 500
+                            else:
+                                intra_minute['blue_gold_diff'] -= 500
+                        elif tier == "T2":
+                            if killer_team == 100:
+                                intra_minute['blue_gold_diff'] += 675
+                            else:
+                                intra_minute['blue_gold_diff'] -= 675
+                        elif tier == "T3":
+                            if killer_team == 100:
+                                intra_minute['blue_gold_diff'] += 500
+                            else:
+                                intra_minute['blue_gold_diff'] -= 500
                     
                     elif tier == 'nexus':
                         write_row_vector(match_rows, statics, killer_team, snapshot, event, inter_minute, intra_minute, 'nexusTurret', rank, region)
@@ -277,8 +343,36 @@ def calc_match_stats(match_rows, match, timeline, rank, region):
                         timers[1] = now + 300000
                     elif lane == 'bot':
                         timers[2] = now + 300000
-                        
-        prev_snapshot = frame["participantFrames"]
+            
+
+            elif etype == "ITEM_DESTROYED":
+                if event["itemId"] == 3513:
+                    inter_minute['herald_deployed'] = 1
+
+
+            # check for feats of strength
+            if inter_minute['feats_of_strength'] == 0:
+                if feats_tracker['fos_kills'] == 0:
+                    if feats_tracker['blue_champ_kills'] == 3:
+                        feats_tracker['fos_kills'] = 100
+                    elif feats_tracker['red_champ_kills'] == 3:
+                        feats_tracker['fos_kills'] = 200
+                if feats_tracker['fos_objectives'] == 0:
+                    if feats_tracker['blue_epic_kills'] == 3:
+                        feats_tracker['fos_objectives'] = 100
+                    elif feats_tracker['red_epic_kills'] == 3:
+                        feats_tracker['fos_objectives'] = 200
+                
+                if list(feats_tracker.values()).count(100) == 2:
+                    inter_minute['feats_of_strength'] = 100
+                    write_row_vector(match_rows, blue_statics, 100, snapshot, event, inter_minute, intra_minute, 'feats', rank, region)
+                elif list(feats_tracker.values()).count(200) == 2:
+                    inter_minute['feats_of_strength'] = 200
+                    write_row_vector(match_rows, red_statics, 200, snapshot, event, inter_minute, intra_minute, 'feats', rank, region)
+
+                            
+            prev_snapshot = frame["participantFrames"]
+    print(f"game written: {match['metadata']['matchId']}")
 
 
 
@@ -294,58 +388,42 @@ async def pick_match(rank, table):
             region = 'asia'
 
     async with RiotAPIClient(default_headers={"X-Riot-Token": API_KEY}) as client: 
-
-        summoner = await client.get_lol_summoner_v4_by_id(region=pre_region, id=player['summonerId'])
-
         matches = await client.get_lol_match_v5_match_ids_by_puuid(region=region,
-                                                               puuid=summoner['puuid'],
+                                                               puuid=player['puuid'],
                                                                queries = {'count':20})
-    while True:
-        match_id = random.choice(matches)
-        if not match_id in table['MatchID']:
-            break
+    for match in matches:
+        if not match in table['matchId']:
+            return (match, region, pre_region)
 
-    return (match_id, region, pre_region)
              
-
-
-# async def main():
-#     new_data = []
-#     try:
-#         while True:
-#             for rank in ["platinum", "emerald", "diamond", "master", "grandmaster", "challenger"]:
-#                 try:
-#                     matchID, region, player_region = await pick_match(rank,df)
-
-#                     async with RiotAPIClient(default_headers={"X-Riot-Token": API_KEY}) as client: 
-#                         league_match = await client.get_lol_match_v5_match(region=region,
-#                                                                         id=matchID)
-#                         timeline = await client.get_lol_match_v5_match_timeline(region=region,
-#                                                                         id=matchID)
-#                 except Exception:
-#                     continue
-#                 if not gb.is_valid_game(league_match):
-#                     continue
-#                 calc_match_stats(new_data, league_match, timeline, rank, player_region)
-#     except KeyboardInterrupt:
-#         print('interupt')
-#     except Exception as e:
-#         print(f'errored out: {e}')
-#     finally:
-#         save_data(old_df=df, games=new_data)
 
 
 async def main():
     new_data = []
-    with open('data_acq/match.json', 'r') as file:
-        league_match = json.load(file)
-    with open('data_acq/timeline.json', 'r') as file:
-        timeline = json.load(file)
+    try:
+        while True:
+            for rank in ["platinum", "emerald", "diamond", "master", "grandmaster", "challenger"]:
+                try:
+                    matchID, region, player_region = await pick_match(rank,df)
 
-    if gb.is_valid_game(league_match, '14.1'):
-        calc_match_stats(new_data, league_match, timeline, 'silver', 'na1')
-    save_data(old_df=df, new_rows=new_data)
+                    async with RiotAPIClient(default_headers={"X-Riot-Token": API_KEY}) as client: 
+                        league_match = await client.get_lol_match_v5_match(region=region,
+                                                                        id=matchID)
+                        timeline = await client.get_lol_match_v5_match_timeline(region=region,
+                                                                        id=matchID)
+                except Exception:
+                    continue
+                if not gb.is_valid_game(league_match,'15.2'):
+                    continue
+                calc_match_stats(new_data, league_match, timeline, rank, player_region)
+    except KeyboardInterrupt:
+        print('interupt')
+    except Exception as e:
+        print(f'errored out: {e}')
+    finally:
+        save_data(old_df=df, new_rows=new_data)
         
 
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())

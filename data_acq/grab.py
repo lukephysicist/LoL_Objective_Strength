@@ -132,22 +132,22 @@ def till_thing(inter_minute, event, thing, team=100):
         else:
             return (seconds_till(red_inhib1, now), seconds_till(red_inhib2, now), seconds_till(red_inhib3, now))
 
-    
+
     if thing == "avg_allied_respawn":
         if team == 100:
-            avg = sum(inter_minute["blue_respawns"]) / 5
-            return seconds_till(avg, now)
+            avg = np.mean([seconds_till(item, now) for item in inter_minute['blue_respawns']])
+            return avg
         else:
-            avg = sum(inter_minute["red_respawns"]) / 5
-            return seconds_till(avg, now)
+            avg = np.mean([seconds_till(item, now) for item in inter_minute['red_respawns']])
+            return avg
     
     elif thing == "avg_enemy_respawn":
         if team == 100:
-            avg = sum(inter_minute['red_respawns']) / 5
-            return seconds_till(avg, now)
+            avg = np.mean([seconds_till(item, now) for item in inter_minute['red_respawns']])
+            return avg
         else:
-            avg = sum(inter_minute['blue_respawns']) / 5
-            return seconds_till(avg, now)
+            avg = np.mean([seconds_till(item, now) for item in inter_minute['blue_respawns']])
+            return avg
     
     elif thing in ["baron_exp_at", "elder_exp_at"]:
         timestamp = inter_minute[thing]
@@ -162,6 +162,8 @@ def till_thing(inter_minute, event, thing, team=100):
     # this is for obj_up_at
     else:
         timestamp = inter_minute[f'{thing}']
+        if timestamp == -1:
+            return None
         return seconds_till(timestamp,now)
         
 
@@ -181,8 +183,7 @@ def get_death_timer(level, now):
         multiplier = 21.75 + math.ceil(2*((now/60000)-45))*.0145
     multiplier = .5 if multiplier > .5 else multiplier
     seconds = base + (base*multiplier)
-    
-    return seconds*60000
+    return seconds*1000
         
 
 def inter_minute_grabber(inter_minute, team, thing):
@@ -240,21 +241,21 @@ def create_dynamic_features(team, snapshot, event, inter_minute, intra_minute):
         till_allied_nt2,                                                                    #tillAlliedNT2
         till_enemy_nt1,                                                                     #tillEnemyNT1
         till_enemy_nt2,                                                                     #tillEnemyNT2
-        till_allied_inhib1,                                                                 #tillAliledInhib1
-        till_allied_inhib2,                                                                 #tillAliledInhib1
-        till_allied_inhib3,                                                                 #tillAliledInhib2
-        till_enemy_inhib1,                                                                  #tillEnemeyInhib1
-        till_enemy_inhib2,                                                                  #tillEnemeyInhib2
-        till_enemy_inhib3,                                                                  #tillEnemeyInhib3
+        till_allied_inhib1,                                                                 #tillAliledTopInhib
+        till_allied_inhib2,                                                                 #tillAliledMidInhib
+        till_allied_inhib3,                                                                 #tillAliledBotInhib
+        till_enemy_inhib1,                                                                  #tillEnemyTopInhib
+        till_enemy_inhib2,                                                                  #tillEnemyMidInhib
+        till_enemy_inhib3,                                                                  #tillEnemyBotInhib
         inter_minute_grabber(inter_minute, team, 'feats_of_strength'),                      #featsOfStrength
         inter_minute_grabber(inter_minute, team, 'atakhan'),                                #atakhan
         inter_minute_grabber(inter_minute, team, 'has_soul'),                               #hasSoul
         inter_minute_grabber(inter_minute, team, 'killed_herald'),                          #killedHerald
+        inter_minute['herald_deployed'],                                                    #heraldDeployed
         inter_minute['soul_type'],                                                          #soulType
         till_thing(inter_minute, event, "baron_exp_at", team),                              #untilBaronExp
         till_thing(inter_minute, event, "elder_exp_at", team),                              #untilElderExp
         till_thing(inter_minute, event, "grubs_up_at"),                                     #untilGrubsSpawn
-        till_thing(inter_minute, event, "herald_up_at"),                                    #untilHeraldSpawn
         till_thing(inter_minute, event, "baron_up_at"),                                     #untilBaronSpawn
         till_thing(inter_minute, event, "dragon_up_at"),                                    #untilDragonSpawn
         till_thing(inter_minute, event, "elder_up_at"),                                     #untilElderSpawn

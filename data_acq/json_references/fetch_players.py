@@ -51,7 +51,7 @@ async def main():
 
     async with RiotAPIClient(default_headers={"X-Riot-Token": API_KEY}) as client:
         players = await fetch_players(client, "PLATINUM")
-        print(f"Total players emerald players retrieved: {len(players)}")
+        print(f"Total platinum players retrieved: {len(players)}")
 
     json_path = os.path.join(script_dir, "platinum.json")
     with open(json_path, 'w') as file:
@@ -61,7 +61,7 @@ async def main():
 
     async with RiotAPIClient(default_headers={"X-Riot-Token": API_KEY}) as client:
         players = await fetch_players(client, "EMERALD")
-        print(f"Total players emerald players retrieved: {len(players)}")
+        print(f"Total emerald players retrieved: {len(players)}")
 
     json_path = os.path.join(script_dir, "emerald.json")
     with open(json_path, 'w') as file:
@@ -71,7 +71,7 @@ async def main():
     
     async with RiotAPIClient(default_headers={"X-Riot-Token": API_KEY}) as client:
         players = await fetch_players(client, "DIAMOND")
-        print(f"Total players emerald players retrieved: {len(players)}")
+        print(f"Total diamond players retrieved: {len(players)}")
 
     json_path = os.path.join(script_dir, "diamond.json")
     with open(json_path, 'w') as file:
@@ -86,7 +86,7 @@ async def main():
             for player in response['entries']:
                 player["Region"] = region
             all_players.extend(response['entries'])
-        print(f"Total players master players retrieved: {len(all_players)}")
+        print(f"Total master players retrieved: {len(all_players)}")
 
     json_path = os.path.join(script_dir, "master.json")
     with open(json_path, 'w') as file:
@@ -101,7 +101,7 @@ async def main():
             for player in response['entries']:
                 player["Region"] = region
             all_players.extend(response['entries'])
-        print(f"Total players grandmaster players retrieved: {len(all_players)}")
+        print(f"Total grandmaster players retrieved: {len(all_players)}")
 
     json_path = os.path.join(script_dir, "grandmaster.json")
     with open(json_path, 'w') as file:
@@ -116,7 +116,7 @@ async def main():
             for player in response['entries']:
                 player["Region"] = region
             all_players.extend(response['entries'])
-        print(f"Total players challenger players retrieved: {len(all_players)}")
+        print(f"Total challenger players retrieved: {len(all_players)}")
 
     json_path = os.path.join(script_dir, "challenger.json")
     with open(json_path, 'w') as file:
