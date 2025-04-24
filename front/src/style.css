@@ -1,0 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Titillium+Web:wght@600&display=swap');
+
+:root{
+  --blue-color: #357ded;
+  --grey-color: #77889926;
+}
+
+header {
+  background-color: #1c1c2e;
+  padding: 20px;
+}
+
+header h1 {
+  color: gold;
+  font-family: 'Titillium Web', sans-serif;
+  text-align: center;
+  font-size: 2em;
+  margin: 0;
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px;
+  background-color: #2a2a40;
+  color: white;
+}
+
+.range-slider > input{
+  color: white;
+  border: none;
+  outline: none;
+  background: var(--grey-color);
+  font-size: 1.5rem;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: 5px;
+  min-width: 64px;
+}
+
+.range-slider{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding-block: 20px;
+}
+
+.range{
+  width: 100%;
+  display: grid;
+  position: relative;
+  z-index: 5;
+}
+
+.range input{
+  grid-row: 2;
+  grid-column: 1;
+  pointer-events: none;
+  appearance: none;
+  background: transparent;
+}
+
+.range input::-webkit-slider-thumb{
+  pointer-events: auto;
+  appearance: none;
+  width: 17px;
+  height: 17px;
+  background: var(--blue-color);
+  border-radius: 100%;
+  cursor: pointer;
+}
+
+.slider{
+  position: absolute;
+  height: 10px;
+  width: 100%;
+  background: var(--grey-color);
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 5px;
+  overflow: hidden;
+  z-index: -1;
+}
+
+.progress{
+  position: absolute;
+  height: 100%;
+  background: var(--blue-color);
+}
