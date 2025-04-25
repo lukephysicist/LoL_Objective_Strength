@@ -1,13 +1,28 @@
 @import url('https://fonts.googleapis.com/css2?family=Titillium+Web:wght@600&display=swap');
 
 :root{
-  --blue-color: #357ded;
+  --blue-color: #00205c;
   --grey-color: #77889926;
+  background-color: rgb(16, 12, 73);
+}
+
+#infernal{
+  width: 150px;
+  height: auto;
+}
+
+#elder{
+  width: 150px;
+  height: auto;
 }
 
 header {
   background-color: #1c1c2e;
   padding: 20px;
+}
+
+body{
+  margin: 0px;
 }
 
 header h1 {
@@ -16,12 +31,13 @@ header h1 {
   text-align: center;
   font-size: 2em;
   margin: 0;
+  margin-top: 20px;
 }
 
 .filters {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: left;
   gap: 20px;
   padding: 20px;
   background-color: #2a2a40;
@@ -47,6 +63,18 @@ header h1 {
   justify-content: space-between;
   gap: 10px;
   padding-block: 20px;
+  position: relative;
+  height: 100px;
+}
+
+.range-slider h2{
+  position: absolute;
+  top: 0%;
+  left: 35%;
+  color: gold;
+  font-family: 'Titillium Web', sans-serif;
+  text-align: center;
+  margin: 0;
 }
 
 .range{
@@ -77,17 +105,20 @@ header h1 {
 .slider{
   position: absolute;
   height: 10px;
-  width: 100%;
+  width: 98%;
   background: var(--grey-color);
   top: 50%;
   transform: translateY(-50%);
   border-radius: 5px;
   overflow: hidden;
   z-index: -1;
+  right: 2px;
+  pointer-events: none;
 }
 
 .progress{
   position: absolute;
   height: 100%;
   background: var(--blue-color);
+  pointer-events: none;
 }
