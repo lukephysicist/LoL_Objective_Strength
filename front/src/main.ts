@@ -1,59 +1,64 @@
-const slider = document.querySelector(".range-slider") as HTMLElement;
-const progress = slider?.querySelector(".progress") as HTMLElement;
-// inputs boxes
-const minMinuteInput = slider?.querySelector(".min-minutes") as HTMLInputElement;
-const maxMinuteInput = slider?.querySelector(".max-minutes") as HTMLInputElement;
-//sliders
-const minInput = slider?.querySelector(".min-input") as HTMLInputElement;
-const maxInput = slider?.querySelector(".max-input") as HTMLInputElement;
+function configureSliders(filterDiv: HTMLDivElement){
+    const progress = filterDiv?.querySelector(".progress") as HTMLDivElement;
+    // inputs boxes
+    const minBoxInput = filterDiv?.querySelector(".min-box") as HTMLInputElement;
+    const maxBoxInput = filterDiv?.querySelector(".max-box") as HTMLInputElement;
+    //sliders
+    const minSliderInput = filterDiv?.querySelector(".min-slider") as HTMLInputElement;
+    const maxSliderInput = filterDiv?.querySelector(".max-slider") as HTMLInputElement;
 
-const updateProgress = () => {
-    const minValue = parseFloat(minInput.value);
-    const maxValue = parseFloat(maxInput.value);
+    const updateProgress = () => {
+        const minValue = parseFloat(minSliderInput.value);
+        const maxValue = parseFloat(maxSliderInput.value);
 
-    const range = Number(maxInput.max) - Number(minInput.min);
-    const valueRange = Number(maxValue) - Number(minValue);
+        const range = Number(maxSliderInput.max) - Number(minSliderInput.min);
+        const valueRange = Number(maxValue) - Number(minValue);
 
-    // fraction of the bar displayed
-    const width = valueRange / range * 100;
-    // distance from the left edge in percent 
-    const minOffset = ((minValue - Number(minInput.min)) / range) * 100;
+        // fraction of the bar displayed
+        const width = valueRange / range * 100;
+        // distance from the left edge in percent 
+        const minOffset = ((minValue - Number(minSliderInput.min)) / range) * 100;
 
-    progress.style.width = width + "%";
-    progress.style.left = minOffset + "%";
+        progress.style.width = width + "%";
+        progress.style.left = minOffset + "%";
 
-    minMinuteInput.value = String(minValue);
-    maxMinuteInput.value = String(maxValue);
+        minBoxInput.value = String(minValue);
+        maxBoxInput.value = String(maxValue);
+    }
+
+    minSliderInput.addEventListener('input', () => {
+        if(parseFloat(minSliderInput.value) >= parseFloat(maxSliderInput.value)){
+            maxSliderInput.value = minSliderInput.value;
+        }
+        updateProgress();
+    });
+
+    maxSliderInput.addEventListener('input', () => {
+        if(parseFloat(maxSliderInput.value) <= parseFloat(minSliderInput.value)){
+            minSliderInput.value = maxSliderInput.value;
+        }
+        updateProgress()
+    });
+
+    minBoxInput.addEventListener('input', () => {
+        minSliderInput.value = minBoxInput.value;
+        if(minBoxInput.value >= maxBoxInput.value){
+            maxSliderInput.value = minSliderInput.value;
+        }
+        updateProgress();
+    })
+
+    maxBoxInput.addEventListener('input', () => {
+        maxSliderInput.value = maxBoxInput.value
+        if(maxBoxInput.value <= minBoxInput.value){
+            minSliderInput.value = maxSliderInput.value;
+        }
+        updateProgress();
+    })
+
+    updateProgress();
 }
-
-minInput.addEventListener('input', () => {
-    if(parseFloat(minInput.value) >= parseFloat(maxInput.value)){
-        maxInput.value = minInput.value;
-    }
-    updateProgress();
-});
-
-maxInput.addEventListener('input', () => {
-    if(parseFloat(maxInput.value) <= parseFloat(minInput.value)){
-        minInput.value = maxInput.value;
-    }
-    updateProgress()
-});
-
-minMinuteInput.addEventListener('input', () => {
-    minInput.value = minMinuteInput.value;
-    if(minMinuteInput.value >= maxMinuteInput.value){
-        maxInput.value = minInput.value
-    }
-    updateProgress();
-})
-
-maxMinuteInput.addEventListener('input', () => {
-    maxInput.value = maxMinuteInput.value
-    if(maxMinuteInput.value <= minMinuteInput.value){
-        minInput.value = maxInput.value
-    }
-    updateProgress();
-})
-
-updateProgress();
+const timeSelectorDiv = document.querySelector('#time-selector') as HTMLDivElement;
+const winprobSelectorDiv = document.querySelector('#winprob-selector') as HTMLDivElement;
+configureSliders(timeSelectorDiv);
+configureSliders(winprobSelectorDiv);

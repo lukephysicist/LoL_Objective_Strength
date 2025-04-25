@@ -7,18 +7,19 @@
 }
 
 #infernal{
-  width: 150px;
-  height: auto;
+  width: 250px;
+  height: 150px;
 }
 
 #elder{
-  width: 150px;
-  height: auto;
+  width: 250px;
+  height: 150px;
 }
 
 header {
   background-color: #1c1c2e;
   padding: 20px;
+  height: 150px;
 }
 
 body{
@@ -31,7 +32,7 @@ header h1 {
   text-align: center;
   font-size: 2em;
   margin: 0;
-  margin-top: 20px;
+  margin-top: 40px;
 }
 
 .filters {
@@ -39,7 +40,6 @@ header h1 {
   align-items: center;
   justify-content: left;
   gap: 20px;
-  padding: 20px;
   background-color: #2a2a40;
   color: white;
 }
@@ -62,15 +62,34 @@ header h1 {
   align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
-  padding-block: 20px;
+  padding-top: 40px;
   position: relative;
+  padding-bottom: 10px;
   height: 100px;
 }
 
-.range-slider h2{
+#time-selector{
+  padding-left: 10px;
+}
+
+#winprob-selector{
+  padding-left: 45px;
+}
+
+#time-selector h2{
   position: absolute;
   top: 0%;
-  left: 35%;
+  left: 31%;
+  color: gold;
+  font-family: 'Titillium Web', sans-serif;
+  text-align: center;
+  margin: 0;
+}
+
+#winprob-selector h2{
+  position: absolute;
+  top: 0%;
+  left: 32%;
   color: gold;
   font-family: 'Titillium Web', sans-serif;
   text-align: center;
@@ -121,4 +140,19 @@ header h1 {
   height: 100%;
   background: var(--blue-color);
   pointer-events: none;
+}
+
+#subcontainer{
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  align-self: stretch;
+}
+
+#rank-selector{
+  display: grid;
+  justify-content: center;
+  align-content: center;
+  grid-template-columns: repeat(5,50px);
+  grid-template-rows: 90% 90%;
 }
