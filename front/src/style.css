@@ -4,6 +4,7 @@
   --blue-color: #00205c;
   --grey-color: #77889926;
   --dark-grey-color: #292f3626;
+  --very-dark-grey-color: #10131526;
   background-color: rgb(16, 12, 73);
 }
 
@@ -160,10 +161,14 @@ header h1 {
   position: relative;
 }
 
-#subcontainer button:active{
+#subcontainer button.active{
   border-radius: 10px;
   background-color: var(--dark-grey-color);
   border-style:double;
+}
+
+#subcontainer button:active{
+  background-color: var(--very-dark-grey-color);
 }
 
 #rank-selector button{
@@ -217,6 +222,7 @@ button .big{
   cursor: pointer;
   position: relative;
   left: 235px;
+  font-size: 12px;
 }
 
 #select-all-button{
