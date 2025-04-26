@@ -210,13 +210,22 @@ button .big{
 }
 #apply-button{
   width: 75px;
-  height: 25px;
+  height: 30px;
   border-radius: 10px;
   background-color: var(--grey-color);
   border-style:double;
   cursor: pointer;
   position: relative;
-  left: 61px;
-
+  left: 235px;
 }
 
+#select-all-button{
+  width: 75px;
+  height: 30px;
+  border-radius: 10px;
+  background-color: var(--grey-color);
+  border-style:double;
+  cursor: pointer;
+  position: absolute;
+  right: 29.65%;
+}

@@ -1,3 +1,5 @@
+import * as d3 from 'd3'
+
 export function configureSliders(filterDiv: HTMLDivElement){
     const progress = filterDiv?.querySelector(".progress") as HTMLDivElement;
     // inputs boxes
