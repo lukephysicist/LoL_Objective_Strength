@@ -5,10 +5,11 @@ import pandas as pd
 from funcs import analyze
 
 from fastapi.middleware.cors import CORSMiddleware
+df: pd.DataFrame = pd.read_parquet('predicted.parquet')
 
 # spin up: uvicorn app:app --reload
 app = FastAPI()
-df: pd.DataFrame = pd.read_parquet('predicted.parquet')
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -19,8 +20,8 @@ app.add_middleware(
 )
 
 class FilterParams(BaseModel):
-    minMinutes: float
-    maxMinutes: float
+    minMinute: float
+    maxMinute: float
     minProb: float
     maxProb: float
     ranks: List[str]
@@ -28,11 +29,10 @@ class FilterParams(BaseModel):
 
 @app.post('/filter-request')
 def filter_return_data(params: FilterParams):
-    filtered_df = df[(df['minutesElapsed'] >= params.minMinutes) &
-                     (df['minutesElapsed'] <= params.maxMinutes) &
+    filtered_df = df[(df['minutesElapsed'] >= params.minMinute) &
+                     (df['minutesElapsed'] <= params.maxMinute) &
                      (df['pre_pred'] >= params.minProb ) &
                      (df['pre_pred'] <= params.maxProb) &
                      (df['rank'].isin(params.ranks))]
     
     return analyze(filtered_df)
-    

@@ -1,4 +1,4 @@
-import * as funcs from './funcs'
+import * as funcs from './funcs';
 // configure sliders
 const timeSelectorDiv = document.querySelector('#time-selector') as HTMLDivElement;
 const winprobSelectorDiv = document.querySelector('#winprob-selector') as HTMLDivElement;
@@ -26,18 +26,39 @@ selectAllButton.addEventListener('click', () => {
     });
 });
 
-// define request data
-const minuteRange = (Array
-                    .from(timeSelectorDiv.querySelectorAll('input'))
-                    .map(input => input.value))
-
-const winProbRange = (Array
-                    .from(winprobSelectorDiv.querySelectorAll('input'))
-                    .map(input => input.value))
-
-
+// request maker button
 const applyFiltersButton = document.querySelector('#apply-button') as HTMLButtonElement;
-applyFiltersButton.addEventListener('click', () => {
-    console.log(minuteRange)
-    console.log(winProbRange)
-})
+applyFiltersButton.addEventListener('click', async () => {
+    // define request data
+    const minuteRange = (Array
+        .from(timeSelectorDiv.querySelectorAll('input'))
+        .map(input => input.value));
+
+    const winProbRange = (Array
+        .from(winprobSelectorDiv.querySelectorAll('input'))
+        .map(input => input.value));
+
+    const minMinute = Number(minuteRange[0]);
+    const maxMinute = Number(minuteRange[1]);
+
+    const minWinProb = Number(winProbRange[0]);
+    const maxWinProb = Number(winProbRange[1]);
+    
+    const ranks = (rankButtons
+                        .filter(button => button.classList.contains('active'))
+                        .map(button => button.querySelector('label')?.textContent
+                                                                    ?.toLowerCase()
+                            )
+                    );
+
+    const requestData = {
+        minMinute: minMinute,
+        maxMinute: maxMinute,
+        minProb: minWinProb,
+        maxProb: maxWinProb,
+        ranks: ranks
+    };
+    const objectiveData = await funcs.makeRequest(requestData)
+    console.log(objectiveData)
+    funcs.drawDataViz(objectiveData)
+});

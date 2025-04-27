@@ -1,4 +1,4 @@
-import * as d3 from 'd3'
+
 
 export function configureSliders(filterDiv: HTMLDivElement){
     const progress = filterDiv?.querySelector(".progress") as HTMLDivElement;
@@ -59,4 +59,36 @@ export function configureSliders(filterDiv: HTMLDivElement){
     })
 
     updateProgress();
+}
+
+
+type RequestFormat = {
+    minMinute: number;
+    maxMinute: number;
+    minProb: number;
+    maxProb: number;
+    ranks: (string | undefined)[];
+};
+
+export async function makeRequest(data: RequestFormat){
+    try{
+        const response = await fetch("http://localhost:8000/filter-request", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        if(!response.ok){
+            throw new Error(`Request Error: ${response.status}`);
+        }
+        return response.json();
+    } catch (error){
+        console.log(error)
+        return 'failure'
+    }
+}
+
+
+
+export function drawDataViz(objectiveData: Object){
+
 }
