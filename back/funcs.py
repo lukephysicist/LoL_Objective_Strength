@@ -83,4 +83,3 @@ def analyze(predicted_df: pd.DataFrame) -> dict:
         .reset_index()
     )
     return calc_mean_ci(bucket_stats)
-

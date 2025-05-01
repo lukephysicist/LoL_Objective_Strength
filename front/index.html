@@ -16,15 +16,15 @@
       <div class="range-slider" id="time-selector">
         <h2>Time Range (min)</h2>
         <input type="number" class="min-box" value="15"
-        min="10" max="45" step="0.1">
+        min="5" max="65" step="0.1">
         <input type="number" class="max-box" value="30"
-        min="10" max="45" step="0.1">
+        min="5" max="65" step="0.1">
 
         <div class="range">
           <input type="range" class="min-slider" value="15"
-          min="10" max="45" step="0.1"> 
+          min="5" max="65" step="0.1"> 
           <input type="range" class="max-slider" value="30"
-          min="10" max="45" step="0.1">
+          min="5" max="65" step="0.1">
           <div class="slider">
             <div class="progress"></div>
           </div>
@@ -103,13 +103,12 @@
   </section>
   <section class="graphs">
     <div id="main-chart">
-      <svg></svg>
     </div>
     <div id="side-charts">
-      Side div
     </div>
   </section>
   
   <script type="module" src="src/main.ts"></script>
+  <div id="tooltip" class="tooltip"></div>
 </body>
 </html>

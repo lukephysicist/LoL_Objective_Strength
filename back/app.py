@@ -35,4 +35,8 @@ def filter_return_data(params: FilterParams):
                      (df['pre_pred'] <= params.maxProb) &
                      (df['rank'].isin(params.ranks))]
     
-    return analyze(filtered_df)
+    objective_impact = analyze(filtered_df)
+    time_hist = filtered_df['minutesElapsed'].tolist()
+    thrid_graph = None
+
+    return (objective_impact, time_hist, thrid_graph)
