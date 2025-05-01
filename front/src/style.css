@@ -235,3 +235,20 @@ button .big{
   position: absolute;
   right: 29.65%;
 }
+
+
+
+.graphs{
+  display:flex;
+  flex-direction: row;
+}
+
+#main-chart{
+  width: 65%;
+  height: 800px;
+  border: 2px solid black;
+}
+
+#side-chart{
+  height: 800px;
+}

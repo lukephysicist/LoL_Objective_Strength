@@ -106,17 +106,5 @@ export function drawDataViz(rawObjectiveData: Object){
     const oldSVG = mainChartDiv.select('svg')
     if(oldSVG){
         oldSVG.remove();
-    }
-
-    const margin = {top: 20, right: 40, bottom: 40, left: 120};
-    const width = 800 - margin.left - margin.right;
-    const height = objectiveData.length * 50; // 50px per row
-
-    const svgElement = mainChartDiv.append('svg')
-                        .attr('width', width + margin.left + margin.right)
-                        .attr("height", height + margin.top + margin.bottom)
-                        .append('g')
-                        .attr('transform', `translate(${margin.left},${margin.top})`)
-    
-    
+    }    
 }
