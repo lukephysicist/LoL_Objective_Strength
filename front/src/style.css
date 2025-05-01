@@ -244,11 +244,10 @@ button .big{
 }
 
 #main-chart{
-  width: 65%;
-  height: 800px;
-  border: 2px solid black;
+  width: 875px;
+  height: 600px;
 }
 
-#side-chart{
-  height: 800px;
+#main-chart svg{
+  border-radius: 20px;
 }

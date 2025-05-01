@@ -95,16 +95,71 @@ export function drawDataViz(rawObjectiveData: Object){
                         .map(([objective, [mean, [lower, upper]]]) => 
                             ({
                             objective,
-                            mean,
-                            lower,
-                            upper
+                            mean: mean * 100,
+                            lower: lower * 100,
+                            upper: upper * 100
                             })
                         )
     )
     // redraw svg
     const mainChartDiv = d3.select('#main-chart');
     const oldSVG = mainChartDiv.select('svg')
-    if(oldSVG){
+    if(!oldSVG.empty()){
         oldSVG.remove();
-    }    
+    }
+
+   
+    const margin = { top: 20, right: 30, bottom: 40, left: 100 };
+    
+    const width = 875 - margin.left - margin.right;
+    const height = 500 - margin.top - margin.bottom;
+
+    const svg = d3.select('#main-chart')
+                    .append('svg')
+                    .attr('width', 875)
+                    .attr('height', 500)
+                    .style('background-color', 'darkgray')
+                    .append('g')
+                    .attr('transform', `translate(${margin.left},${margin.top})`);
+
+
+    const x = d3.scaleLinear()
+                .domain([
+                    d3.min(objectiveData, d => d.lower) ?? 0,
+                    d3.max(objectiveData, d => d.upper) ?? 10
+                ])
+                .range([0, width]);
+
+    const y = d3.scaleBand()
+                .domain(objectiveData.map(d => d.objective))
+                .range([0, height])
+                .padding(0.1);
+
+    svg.append('g')
+        .attr('transform', `translate(0, ${height})`)
+        .call(d3.axisBottom(x));
+    
+    svg.append('g')
+        .call(d3.axisLeft(y));
+
+    svg.selectAll('.conf-bar')
+    .data(objectiveData)
+    .enter()
+    .append('rect')
+    .attr('class', 'conf-bar')
+    .attr('x', d => x(d.lower))
+    .attr('y', d => y(d.objective)! + y.bandwidth() / 2 - 4)
+    .attr('width', d => x(d.upper) - x(d.lower))
+    .attr('height', 8)
+    .attr('fill', 'lightblue');
+     
+    svg.selectAll('.mean-dot')
+   .data(objectiveData)
+   .enter()
+   .append('circle')
+   .attr('class', 'mean-dot')
+   .attr('cx', d => x(d.mean))
+   .attr('cy', d => y(d.objective)! + y.bandwidth() / 2)
+   .attr('r', 5)
+   .attr('fill', 'steelblue');             
 }
