@@ -251,7 +251,7 @@ export function drawTimeHist(minuteList: number[]){
     .call(d3.axisBottom(x));
     
     svg.append("text")
-        .attr("x", 400)
+        .attr("x", 200)
         .attr("y", 235)
         .attr("text-anchor", "middle")
         .text("Minutes Elapsed");

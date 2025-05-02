@@ -77,7 +77,7 @@ header h1 {
 #time-selector h2{
   position: absolute;
   top: 0%;
-  left: 41%;
+  left: 32%;
   color: gold;
   font-family: 'Titillium Web', sans-serif;
   text-align: center;
@@ -87,7 +87,7 @@ header h1 {
 #winprob-selector h2{
   position: absolute;
   top: 0%;
-  left: 35%;
+  left: 29%;
   color: gold;
   font-family: 'Titillium Web', sans-serif;
   text-align: center;
