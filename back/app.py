@@ -37,6 +37,6 @@ def filter_return_data(params: FilterParams):
     
     objective_impact = analyze(filtered_df)
     time_hist = filtered_df['minutesElapsed'].tolist()
-    thrid_graph = None
+    objective_count = filtered_df.groupby('objective').size().to_dict()
 
-    return (objective_impact, time_hist, thrid_graph)
+    return (objective_impact, time_hist, objective_count)

@@ -61,4 +61,5 @@ applyFiltersButton.addEventListener('click', async () => {
     const objectiveData = await funcs.makeRequest(requestData)
     funcs.drawMainChart(objectiveData[0])
     funcs.drawTimeHist(objectiveData[1])
+    funcs.drawCountGraph(objectiveData[2])
 });

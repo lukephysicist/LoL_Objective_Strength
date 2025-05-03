@@ -206,21 +206,20 @@ export function drawMainChart(rawObjectiveData: Object){
 
 export function drawTimeHist(minuteList: number[]){
     const sideChartDiv = d3.select('#side-charts');
-    const oldSVG = sideChartDiv.select('svg')
-    if(!oldSVG.empty()){
-        oldSVG.remove();
-    }
+    sideChartDiv.select('#time-hist').remove()
 
     const margin = { top: 20, right: 10, bottom: 40, left: 60 };
     
     const width = window.innerWidth*.4 - margin.left - margin.right;
-    const height = 300 - margin.top - margin.bottom;
+    const height = 357 - margin.top - margin.bottom;
 
     const svg = sideChartDiv
                 .append('svg')
+                .attr('id', 'time-hist')
                 .style('background-color', 'white')
                 .attr("width", width)
-                .attr("height", height);
+                .attr("height", height)
+                .attr('transform', `translate(${margin.left/2.35}, 0)`);
 
     const x = d3.scaleLinear()
                 .domain(d3.extent(minuteList) as [number, number])
@@ -251,8 +250,8 @@ export function drawTimeHist(minuteList: number[]){
     .call(d3.axisBottom(x));
     
     svg.append("text")
-        .attr("x", 200)
-        .attr("y", 235)
+        .attr("x", 240)
+        .attr("y", 288)
         .attr("text-anchor", "middle")
         .text("Minutes Elapsed");
 
@@ -267,3 +266,81 @@ export function drawTimeHist(minuteList: number[]){
         .attr("text-anchor", "middle")
         .text("Observations Count");
 };
+
+
+export function drawCountGraph(objectiveCount: Object){
+    const sideChartDiv = d3.select('#side-charts');
+    sideChartDiv.select('#obj-count').remove()
+
+    const data = Object.entries(objectiveCount).map(([key, value]) => ({
+        objective: key,
+        count: value
+    }));
+
+    const margin = { top: 20, right: 10, bottom: 40, left: 60 };
+    
+    const width = window.innerWidth*.4 - margin.left - margin.right;
+    const height = 357 - margin.top - margin.bottom;
+
+    const svg = sideChartDiv
+                .append('svg')
+                .attr('id', 'obj-count')
+                .style('background-color', 'white')
+                .attr("width", width)
+                .attr("height", height)
+                .attr('transform', `translate(${margin.left/2.35}, 0)`);
+
+    const x = d3.scaleBand()
+    .domain(data.map(d => d.objective))
+    .range([margin.left, width - margin.right])
+    .padding(0.1);
+
+    const y = d3.scaleLinear()
+    .domain([0, d3.max(data, d => d.count)!])
+    .nice()
+    .range([height - margin.bottom, margin.top]);
+
+    svg.append("g")
+        .selectAll("rect")
+        .data(data)
+        .enter()
+        .append("rect")
+        .attr("x", d => x(d.objective)!)
+        .attr("y", d => y(d.count))
+        .attr("width", x.bandwidth())
+        .attr("height", d => y(0) - y(d.count))
+        .attr("fill", "steelblue");
+    
+    svg.append("g")
+    .selectAll("text.bar-label")
+    .data(data)
+    .enter()
+    .append("text")
+    .attr("class", "bar-label")
+    .attr("x", d => x(d.objective)! + x.bandwidth() / 2)
+    .attr("y", d => y(d.count) - 5)
+    .attr("text-anchor", "middle")
+    .attr("font-size", "7px")
+    .text(d => d.objective);
+
+    svg.append("g")
+    .attr("transform", `translate(0,${y(0)})`)
+    .call(d3.axisBottom(x).tickFormat(() => ''));
+
+    svg.append("g")
+        .attr('transform', `translate(60,0)`)
+        .call(d3.axisLeft(y));
+
+    svg.append("text")
+    .attr("x", margin.left + (width - margin.left - margin.right) / 2)
+    .attr("y", height - 5)  // 5px above the bottom edge of the SVG
+    .attr("text-anchor", "middle")
+    .text("Objective");
+
+    svg.append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("y", margin.left / 4)
+    .attr("x", -height / 2)
+    .attr("text-anchor", "middle")
+    .text("Observation Count");
+}
