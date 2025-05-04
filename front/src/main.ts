@@ -59,6 +59,7 @@ applyFiltersButton.addEventListener('click', async () => {
         ranks: ranks
     };
     const objectiveData = await funcs.makeRequest(requestData)
-    console.log(objectiveData)
-    funcs.drawDataViz(objectiveData)
+    funcs.drawMainChart(objectiveData[0])
+    funcs.drawTimeHist(objectiveData[1])
+    funcs.drawCountGraph(objectiveData[2])
 });

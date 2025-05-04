@@ -1,4 +1,4 @@
-
+import * as d3 from 'd3'
 
 export function configureSliders(filterDiv: HTMLDivElement){
     const progress = filterDiv?.querySelector(".progress") as HTMLDivElement;
@@ -82,13 +82,293 @@ export async function makeRequest(data: RequestFormat){
         }
         return response.json();
     } catch (error){
-        console.log(error)
-        return 'failure'
+        console.log(error);
+        return 'failure';
     }
 }
 
 
 
-export function drawDataViz(objectiveData: Object){
+export function drawMainChart(rawObjectiveData: Object){
+    const objectiveData = (
+                        Object.entries(rawObjectiveData)
+                        .map(([objective, [mean, [lower, upper]]]) => 
+                            ({
+                            objective,
+                            mean: mean * 100,
+                            lower: lower * 100,
+                            upper: upper * 100
+                            }))
+                        .sort((a, b) => b.mean - a.mean)
+    )
 
+    const mainChartDiv = d3.select('#main-chart');
+    const oldSVG = mainChartDiv.select('svg')
+    if(!oldSVG.empty()){
+        oldSVG.remove();
+    }
+
+   
+    const margin = { top: 20, right: 20, bottom: 40, left: 100 };
+    
+    const width = window.innerWidth*.6 - margin.left - margin.right;
+    const height = 600 - margin.top - margin.bottom;
+
+    const svg = mainChartDiv
+                    .append('svg')
+                    .attr('width', window.innerWidth*.6)
+                    .attr('height', 600)
+                    .style('background-color', 'white')
+                    .append('g')
+                    .attr('transform', `translate(${margin.left},${margin.top})`);
+
+
+    const x = d3.scaleLinear()
+                .domain([
+                    d3.min(objectiveData, d => d.lower) ?? 0,
+                    d3.max(objectiveData, d => d.upper) ?? 10
+                ])
+                .range([0, width]);
+
+    const y = d3.scaleBand()
+                .domain(objectiveData.map(d => d.objective))
+                .range([0, height])
+                .padding(0.1);
+
+    const tooltip = d3.select('#tooltip')
+
+    svg.append('g')
+        .attr('transform', `translate(0, ${height})`)
+        .call(d3.axisBottom(x));
+
+    svg.append('text')
+    .attr('text-anchor', 'middle')
+    .attr('x', width / 2)
+    .attr('y', height + margin.bottom - 5)  
+    .text('Win Probability Added (%)')
+    .style('font-size', '14px')
+    .style('fill', 'black');
+    
+    svg.append('g')
+        .call(d3.axisLeft(y));
+
+    svg.selectAll('.conf-bar')
+    .data(objectiveData)
+    .enter()
+    .append('rect')
+    .attr('class', 'conf-bar')
+    .attr('x', d => x(d.lower))
+    .attr('y', d => y(d.objective)! + y.bandwidth() / 2 - 4)
+    .attr('width', d => x(d.upper) - x(d.lower))
+    .attr('height', 8)
+    .attr('fill', 'lightblue')
+    .attr('rx', 4)
+    .attr('ry', 4)
+    .on('mouseover', (event, d) => {
+        tooltip.html(`
+          <strong>${d.objective}</strong><br/>
+          Mean: ${d.mean.toFixed(2)}%<br/>
+          CI: [${d.lower.toFixed(2)}%, ${d.upper.toFixed(2)}%]
+        `)
+        .style('left', (event.pageX + 10) + 'px')
+        .style('top', (event.pageY - 28) + 'px')
+        .style('opacity', 1);
+      })
+      .on('mouseout', () => {
+        tooltip.style('opacity', 0);
+      });
+    
+
+    svg.selectAll('.mean-dot')
+   .data(objectiveData)
+   .enter()
+   .append('circle')
+   .attr('class', 'mean-dot')
+   .attr('cx', d => x(d.mean))
+   .attr('cy', d => y(d.objective)! + y.bandwidth() / 2)
+   .attr('r', 5)
+   .attr('fill', 'steelblue')
+   .on('mouseover', (event, d) => {
+    tooltip.html(`
+      <strong>${d.objective}</strong><br/>
+      Mean: ${d.mean.toFixed(2)}%<br/>
+      CI: [${d.lower.toFixed(2)}%, ${d.upper.toFixed(2)}%]
+    `)
+    .style('left', (event.pageX + 10) + 'px')
+    .style('top', (event.pageY - 28) + 'px')
+    .style('opacity', 1);
+    })
+    .on('mouseout', () => {
+        tooltip.style('opacity', 0);
+    });
 }
+
+
+export function drawTimeHist(minuteList: number[]){
+    const sideChartDiv = d3.select('#side-charts');
+    sideChartDiv.select('#time-hist').remove()
+
+    const margin = { top: 20, right: 10, bottom: 40, left: 60 };
+    
+    const width = window.innerWidth*.4 - margin.left - margin.right;
+    const height = 357 - margin.top - margin.bottom;
+
+    const svg = sideChartDiv
+                .append('svg')
+                .attr('id', 'time-hist')
+                .style('background-color', 'white')
+                .attr("width", width)
+                .attr("height", height)
+                .attr('transform', `translate(${margin.left/2.35}, 0)`);
+
+    const x = d3.scaleLinear()
+                .domain(d3.extent(minuteList) as [number, number])
+                .range([margin.left, width - margin.right]);
+    
+    const bins = d3.bin()
+                    .domain(x.domain() as [number, number])
+                    .thresholds(x.ticks(15))(minuteList);
+    
+
+    const y = d3.scaleLinear()
+    .domain([0, d3.max(bins, d => d.length) as number])
+    .nice()
+    .range([height - margin.bottom, margin.top]);
+
+    svg.append("g")
+    .selectAll("rect")
+    .data(bins)
+    .enter().append("rect")
+    .attr("x", d => x(d.x0!))
+    .attr("y", d => y(d.length))
+    .attr("width", d => x(d.x1!) - x(d.x0!) - 1)
+    .attr("height", d => y(0) - y(d.length))
+    .attr("fill", "steelblue");
+
+    svg.append("g")
+    .attr("transform", `translate(0,${height - margin.bottom})`)
+    .call(d3.axisBottom(x));
+    
+    svg.append("text")
+        .attr("x", 240)
+        .attr("y", 288)
+        .attr("text-anchor", "middle")
+        .text("Minutes Elapsed");
+
+    svg.append("g")
+    .attr("transform", `translate(${margin.left},0)`)
+    .call(d3.axisLeft(y));
+
+    svg.append("text")
+        .attr("transform", `rotate(-90)`)
+        .attr("x", -(height / 2))
+        .attr("y", 12)
+        .attr("text-anchor", "middle")
+        .text("Observations Count");
+};
+
+
+export function drawCountGraph(objectiveCount: Object){
+    const sideChartDiv = d3.select('#side-charts');
+    sideChartDiv.select('#obj-count').remove()
+
+    const data = Object.entries(objectiveCount).map(([key, value]) => ({
+        objective: key,
+        count: value
+    }));
+
+    const margin = { top: 20, right: 10, bottom: 40, left: 60 };
+    
+    const width = window.innerWidth*.4 - margin.left - margin.right;
+    const height = 357 - margin.top - margin.bottom;
+
+    const svg = sideChartDiv
+                .append('svg')
+                .attr('id', 'obj-count')
+                .style('background-color', 'white')
+                .attr("width", width)
+                .attr("height", height)
+                .attr('transform', `translate(${margin.left/2.35}, 0)`);
+
+    const x = d3.scaleBand()
+    .domain(data.map(d => d.objective))
+    .range([margin.left, width - margin.right])
+    .padding(0.1);
+
+    const y = d3.scaleLinear()
+    .domain([0, d3.max(data, d => d.count)!])
+    .nice()
+    .range([height - margin.bottom, margin.top]);
+
+
+    const tooltip = d3.select('#side-tooltip');
+
+
+    svg.append("g")
+    .selectAll("rect")
+    .data(data)
+    .enter()
+    .append("rect")
+    .attr("x", d => x(d.objective)!)
+    .attr("y", d => y(d.count))
+    .attr("width", x.bandwidth())
+    .attr("height", d => y(0) - y(d.count))
+    .attr("fill", "steelblue")
+    .on("mouseover", (event, d) => {
+      tooltip
+        .style("opacity", "1")
+        .html(`<strong>${d.objective}:</strong> ${d.count}`);
+    })
+    .on("mousemove", (event) => {
+      tooltip
+        .style("left", (event.pageX + 10) + "px")
+        .style("top", (event.pageY - 28) + "px");
+    })
+    .on("mouseout", () => {
+      tooltip.style("opacity", "0");
+    });
+  
+    
+
+    svg.append("g")
+        .selectAll("text.bar-label")
+        .data(data)
+        .enter()
+        .append("text")
+        .attr("class", "bar-label")
+        .attr("transform", d => {
+            const xPos = x(d.objective)! + x.bandwidth() / 2;
+            const yPos = y(d.count) - 5;
+            return `translate(${xPos + 3}, ${yPos - 35}) rotate(-90)`;
+        })
+        .attr("text-anchor", "end")
+        .attr("font-size", "7px")
+        .text(d => d.objective)
+        .style("pointer-events", "none");
+
+
+
+    svg.append("g")
+        .attr("transform", `translate(0,${y(0)})`)
+        .call(d3.axisBottom(x).tickFormat(() => ''));
+
+
+    svg.append("g")
+        .attr('transform', `translate(60,0)`)
+        .call(d3.axisLeft(y));
+
+
+
+    svg.append("text")
+        .attr("x", margin.left + (width - margin.left - margin.right) / 2)
+        .attr("y", height - 5)
+        .attr("text-anchor", "middle")
+        .text("Objective");
+
+    svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", margin.left / 4)
+        .attr("x", -height / 2)
+        .attr("text-anchor", "middle")
+        .text("Observation Count");
+};
