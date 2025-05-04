@@ -300,47 +300,75 @@ export function drawCountGraph(objectiveCount: Object){
     .nice()
     .range([height - margin.bottom, margin.top]);
 
-    svg.append("g")
-        .selectAll("rect")
-        .data(data)
-        .enter()
-        .append("rect")
-        .attr("x", d => x(d.objective)!)
-        .attr("y", d => y(d.count))
-        .attr("width", x.bandwidth())
-        .attr("height", d => y(0) - y(d.count))
-        .attr("fill", "steelblue");
-    
-    svg.append("g")
-    .selectAll("text.bar-label")
-    .data(data)
-    .enter()
-    .append("text")
-    .attr("class", "bar-label")
-    .attr("x", d => x(d.objective)! + x.bandwidth() / 2)
-    .attr("y", d => y(d.count) - 5)
-    .attr("text-anchor", "middle")
-    .attr("font-size", "7px")
-    .text(d => d.objective);
+
+    const tooltip = d3.select('#side-tooltip');
+
 
     svg.append("g")
-    .attr("transform", `translate(0,${y(0)})`)
-    .call(d3.axisBottom(x).tickFormat(() => ''));
+    .selectAll("rect")
+    .data(data)
+    .enter()
+    .append("rect")
+    .attr("x", d => x(d.objective)!)
+    .attr("y", d => y(d.count))
+    .attr("width", x.bandwidth())
+    .attr("height", d => y(0) - y(d.count))
+    .attr("fill", "steelblue")
+    .on("mouseover", (event, d) => {
+      tooltip
+        .style("opacity", "1")
+        .html(`<strong>${d.objective}:</strong> ${d.count}`);
+    })
+    .on("mousemove", (event) => {
+      tooltip
+        .style("left", (event.pageX + 10) + "px")
+        .style("top", (event.pageY - 28) + "px");
+    })
+    .on("mouseout", () => {
+      tooltip.style("opacity", "0");
+    });
+  
+    
+
+    svg.append("g")
+        .selectAll("text.bar-label")
+        .data(data)
+        .enter()
+        .append("text")
+        .attr("class", "bar-label")
+        .attr("transform", d => {
+            const xPos = x(d.objective)! + x.bandwidth() / 2;
+            const yPos = y(d.count) - 5;
+            return `translate(${xPos + 3}, ${yPos - 35}) rotate(-90)`;
+        })
+        .attr("text-anchor", "end")
+        .attr("font-size", "7px")
+        .text(d => d.objective)
+        .style("pointer-events", "none");
+
+
+
+    svg.append("g")
+        .attr("transform", `translate(0,${y(0)})`)
+        .call(d3.axisBottom(x).tickFormat(() => ''));
+
 
     svg.append("g")
         .attr('transform', `translate(60,0)`)
         .call(d3.axisLeft(y));
 
-    svg.append("text")
-    .attr("x", margin.left + (width - margin.left - margin.right) / 2)
-    .attr("y", height - 5)  // 5px above the bottom edge of the SVG
-    .attr("text-anchor", "middle")
-    .text("Objective");
+
 
     svg.append("text")
-    .attr("transform", "rotate(-90)")
-    .attr("y", margin.left / 4)
-    .attr("x", -height / 2)
-    .attr("text-anchor", "middle")
-    .text("Observation Count");
-}
+        .attr("x", margin.left + (width - margin.left - margin.right) / 2)
+        .attr("y", height - 5)
+        .attr("text-anchor", "middle")
+        .text("Objective");
+
+    svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", margin.left / 4)
+        .attr("x", -height / 2)
+        .attr("text-anchor", "middle")
+        .text("Observation Count");
+};
